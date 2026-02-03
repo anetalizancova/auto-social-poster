@@ -117,38 +117,56 @@ function createPostTemplates(sources: ContentSources, totalPosts: number): PostT
   
   // 1. WEBINÁŘE - priorita! (30% obsahu)
   const webinarSlots = Math.ceil(totalPosts * 0.3);
-  const shuffledWebinars = shuffle(sources.webinars);
-  for (let i = 0; i < Math.min(webinarSlots, shuffledWebinars.length); i++) {
-    const webinar = shuffledWebinars[i];
-    const angle = CONTENT_ANGLES.webinar[i % CONTENT_ANGLES.webinar.length];
-    addTemplate('webinar_invite', webinar, angle, true, webinar.url);
+  const webinars = sources.webinars || [];
+  console.log(`📅 Webinars available: ${webinars.length}, slots: ${webinarSlots}`);
+  if (webinars.length > 0) {
+    const shuffledWebinars = shuffle(webinars);
+    for (let i = 0; i < Math.min(webinarSlots, shuffledWebinars.length); i++) {
+      const webinar = shuffledWebinars[i];
+      const angle = CONTENT_ANGLES.webinar[i % CONTENT_ANGLES.webinar.length];
+      addTemplate('webinar_invite', webinar, angle, true, webinar.url);
+      console.log(`  ✅ Added webinar: ${webinar.title}`);
+    }
   }
   
   // 2. PRODUKTY - Test AI Dovedností, Aimee, AI Edu Stream (25% obsahu)
   const productSlots = Math.ceil(totalPosts * 0.25);
-  const shuffledProducts = shuffle(sources.products);
-  for (let i = 0; i < Math.min(productSlots, shuffledProducts.length); i++) {
-    const product = shuffledProducts[i];
-    const angle = CONTENT_ANGLES.product[i % CONTENT_ANGLES.product.length];
-    addTemplate('product_benefit', product, angle, true, product.url);
+  const products = sources.products || [];
+  console.log(`🛍️ Products available: ${products.length}, slots: ${productSlots}`);
+  if (products.length > 0) {
+    const shuffledProducts = shuffle(products);
+    for (let i = 0; i < Math.min(productSlots, shuffledProducts.length); i++) {
+      const product = shuffledProducts[i];
+      const angle = CONTENT_ANGLES.product[i % CONTENT_ANGLES.product.length];
+      addTemplate('product_benefit', product, angle, true, product.url);
+      console.log(`  ✅ Added product: ${product.name}`);
+    }
   }
   
   // 3. BLOG ČLÁNKY - ale každý článek max 1x (25% obsahu)
   const articleSlots = Math.ceil(totalPosts * 0.25);
-  const shuffledArticles = shuffle(sources.articles);
-  for (let i = 0; i < Math.min(articleSlots, shuffledArticles.length); i++) {
-    const article = shuffledArticles[i];
-    const angle = CONTENT_ANGLES.article[i % CONTENT_ANGLES.article.length];
-    addTemplate('blog_insight', article, angle, true, article.url);
+  const articles = sources.articles || [];
+  console.log(`📝 Articles available: ${articles.length}, slots: ${articleSlots}`);
+  if (articles.length > 0) {
+    const shuffledArticles = shuffle(articles);
+    for (let i = 0; i < Math.min(articleSlots, shuffledArticles.length); i++) {
+      const article = shuffledArticles[i];
+      const angle = CONTENT_ANGLES.article[i % CONTENT_ANGLES.article.length];
+      addTemplate('blog_insight', article, angle, true, article.url);
+    }
   }
   
-  // 4. TESTIMONIALS a QUOTES (10% obsahu)
+  // 4. TESTIMONIALS (10% obsahu)
   const testimonialSlots = Math.ceil(totalPosts * 0.1);
-  const shuffledTestimonials = shuffle(sources.testimonials);
-  for (let i = 0; i < Math.min(testimonialSlots, shuffledTestimonials.length); i++) {
-    const testimonial = shuffledTestimonials[i];
-    const angle = CONTENT_ANGLES.testimonial[i % CONTENT_ANGLES.testimonial.length];
-    addTemplate('testimonial', testimonial, angle, false);
+  const testimonials = sources.testimonials || [];
+  console.log(`💬 Testimonials available: ${testimonials.length}, slots: ${testimonialSlots}`);
+  if (testimonials.length > 0) {
+    const shuffledTestimonials = shuffle(testimonials);
+    for (let i = 0; i < Math.min(testimonialSlots, shuffledTestimonials.length); i++) {
+      const testimonial = shuffledTestimonials[i];
+      const angle = CONTENT_ANGLES.testimonial[i % CONTENT_ANGLES.testimonial.length];
+      addTemplate('testimonial', testimonial, angle, false);
+    }
   }
   
   // 5. AI TIPY (10% obsahu)
@@ -167,9 +185,24 @@ function createPostTemplates(sources: ContentSources, totalPosts: number): PostT
     addTemplate('ai_tip', { id: uuid(), text: tip.tip, source: tip.tool, category: 'tip' } as ScrapedQuote, 'practical', false);
   }
   
-  // Zamíchej a vyber požadovaný počet
-  const shuffled = templates.sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, totalPosts);
+  // Log template counts
+  const typeCounts = templates.reduce((acc, t) => {
+    acc[t.type] = (acc[t.type] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  console.log(`📊 Template types:`, typeCounts);
+  
+  // Proper Fisher-Yates shuffle
+  const shuffled = [...templates];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  
+  const selected = shuffled.slice(0, totalPosts);
+  console.log(`✅ Selected ${selected.length} templates from ${templates.length} total`);
+  
+  return selected;
 }
 
 /**
@@ -324,6 +357,76 @@ async function generateSinglePost(template: PostTemplate, platform: Platform): P
     });
     
     let content = response.choices[0]?.message?.content?.trim() || '';
+    
+    // POST-PROCESSING: Oprav tykání na vykání
+    content = content
+      // Slovesa
+      .replace(/\bChceš\b/g, 'Chcete')
+      .replace(/\bchceš\b/g, 'chcete')
+      .replace(/\bMáš\b/g, 'Máte')
+      .replace(/\bmáš\b/g, 'máte')
+      .replace(/\bPotřebuješ\b/g, 'Potřebujete')
+      .replace(/\bpotřebuješ\b/g, 'potřebujete')
+      .replace(/\bZajímá tě\b/g, 'Zajímá vás')
+      .replace(/\bzajímá tě\b/g, 'zajímá vás')
+      .replace(/\bPřemýšlíš\b/g, 'Přemýšlíte')
+      .replace(/\bpřemýšlíš\b/g, 'přemýšlíte')
+      .replace(/\bVíš\b/g, 'Víte')
+      .replace(/\bvíš\b/g, 'víte')
+      .replace(/\bVěděl jsi\b/g, 'Věděli jste')
+      .replace(/\bvěděl jsi\b/g, 'věděli jste')
+      .replace(/\bZkus\b/g, 'Zkuste')
+      .replace(/\bzkus\b/g, 'zkuste')
+      .replace(/\bPodívej se\b/g, 'Podívejte se')
+      .replace(/\bpodívej se\b/g, 'podívejte se')
+      .replace(/\bPřijď\b/g, 'Přijďte')
+      .replace(/\bpřijď\b/g, 'přijďte')
+      .replace(/\bZjisti\b/g, 'Zjistěte')
+      .replace(/\bzjisti\b/g, 'zjistěte')
+      .replace(/\bNapiš\b/g, 'Napište')
+      .replace(/\bnapiš\b/g, 'napište')
+      .replace(/\bOtevři\b/g, 'Otevřete')
+      .replace(/\botevři\b/g, 'otevřete')
+      .replace(/\bOtevíráš\b/g, 'Otevíráte')
+      .replace(/\botevíráš\b/g, 'otevíráte')
+      .replace(/\bPíšeš\b/g, 'Píšete')
+      .replace(/\bpíšeš\b/g, 'píšete')
+      .replace(/\bUmíš\b/g, 'Umíte')
+      .replace(/\bumíš\b/g, 'umíte')
+      .replace(/\bNenech\b/g, 'Nenechte')
+      .replace(/\bnenech\b/g, 'nenechte')
+      .replace(/\bPřiprav se\b/g, 'Připravte se')
+      .replace(/\bpřiprav se\b/g, 'připravte se')
+      .replace(/\bZačni\b/g, 'Začněte')
+      .replace(/\bzačni\b/g, 'začněte')
+      .replace(/\bZískej\b/g, 'Získejte')
+      .replace(/\bzískej\b/g, 'získejte')
+      .replace(/\bPřihlas se\b/g, 'Přihlaste se')
+      .replace(/\bpřihlas se\b/g, 'přihlaste se')
+      .replace(/\bSpoj se\b/g, 'Spojte se')
+      .replace(/\bspoj se\b/g, 'spojte se')
+      .replace(/\bPředstav si\b/g, 'Představte si')
+      .replace(/\bpředstav si\b/g, 'představte si')
+      .replace(/\bUvidíš\b/g, 'Uvidíte')
+      .replace(/\buvidíš\b/g, 'uvidíte')
+      // Zájmena
+      .replace(/\btě\b/g, 'vás')
+      .replace(/\btobě\b/g, 'vám')
+      .replace(/\bti\b(?!\s)/g, 'vám') // "ti" ale ne "tipy"
+      .replace(/\bTvůj\b/g, 'Váš')
+      .replace(/\btvůj\b/g, 'váš')
+      .replace(/\bTvoje\b/g, 'Vaše')
+      .replace(/\btvoje\b/g, 'vaše')
+      .replace(/\bTvá\b/g, 'Vaše')
+      .replace(/\btvá\b/g, 'vaše')
+      // Minulý čas
+      .replace(/\bnarazil jsi\b/g, 'narazili jste')
+      .replace(/\bslyšel jsi\b/g, 'slyšeli jste')
+      .replace(/\bvybudoval jsi\b/g, 'vybudovali jste')
+      .replace(/\bzkusil jsi\b/g, 'zkusili jste')
+      // Fix případné chyby
+      .replace(/vám ukážeme/g, 'vám ukážeme')
+      .replace(/vás uzamykáš/g, 'vás uzamykáte');
     
     // Ořízni pokud je moc dlouhé
     if (content.length > maxLength) {
