@@ -120,10 +120,73 @@ async function scrapeWebinars(): Promise<ScrapedWebinar[]> {
 async function scrapeProducts(): Promise<ScrapedProduct[]> {
   const products: ScrapedProduct[] = [];
   
+  // Hardcoded produkty pro spolehlivost (Framer je JS-rendered)
+  const predefinedProducts: Omit<ScrapedProduct, 'id'>[] = [
+    {
+      name: 'Test AI Dovedností',
+      tagline: 'Zjistěte, jak jste na tom s AI za 5 minut',
+      description: 'Bezplatný test, který vám ukáže vaši aktuální úroveň AI dovedností. Dostanete personalizované doporučení, co se naučit dál.',
+      price: 'Zdarma',
+      url: `${BASE_URL}/aidovednosti`,
+      features: [
+        'Otestujte se za 5 minut',
+        'Personalizované výsledky',
+        'Doporučení dalších kroků',
+        'Srovnání s ostatními',
+      ],
+      cta: 'Spustit test',
+    },
+    {
+      name: 'Aimee',
+      tagline: 'Váš AI buddy, který vás naučí používat AI',
+      description: 'Aimee je AI asistent, který vás provede světem umělé inteligence. Denní tipy, praktické úkoly a zpětná vazba přímo ve vašem pracovním prostředí.',
+      price: 'Prémiové',
+      url: `${BASE_URL}/aimee`,
+      features: [
+        'Denní AI tipy a úkoly',
+        'Personalizované učení',
+        'Praktické promptování',
+        'Zpětná vazba na vaše výstupy',
+      ],
+      cta: 'Vyzkoušet Aimee',
+    },
+    {
+      name: 'AI Edu Stream',
+      tagline: 'Všechny webináře a komunita na jednom místě',
+      description: 'Přístup ke všem live webinářům, záznamům a exkluzivní AI komunitě. Učte se od těch nejlepších AI expertů.',
+      price: 'Prémiové',
+      url: `${BASE_URL}/ai-edu-stream`,
+      features: [
+        'Všechny webináře zdarma',
+        'Přístup k záznamům',
+        'Exkluzivní AI komunita',
+        'Q&A s experty',
+      ],
+      cta: 'Získat přístup',
+    },
+    {
+      name: 'Aibility',
+      tagline: 'Pomáháme lidem získat superschopnosti díky AI',
+      description: 'Jsme AI-first firma, která učí lidi i firmy používat umělou inteligenci prakticky a efektivně. Žádná teorie, jen výsledky.',
+      price: '',
+      url: `${BASE_URL}`,
+      features: [
+        'AI transformace pro firmy',
+        'Vzdělávací programy',
+        'Live workshopy a webináře',
+        'Praktické AI nástroje',
+      ],
+      cta: 'Zjistit více',
+    },
+  ];
+  
+  // Vrať predefinované produkty
+  for (const product of predefinedProducts) {
+    products.push({ id: uuid(), ...product });
+  }
+  
+  // Zkus doscrapovat další z webu
   const productPages = [
-    { url: '/aidovednosti', name: 'AI Maturity Test' },
-    { url: '/aimee', name: 'Aimee' },
-    { url: '/ai-edu-stream', name: 'AI Edu Stream' },
     { url: '/cursor', name: 'Cursor Masterclass' },
     { url: '/claudecode', name: 'Claude Code Masterclass' },
   ];

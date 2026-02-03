@@ -38,6 +38,24 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
     
+    // Najdi poslední naplánované datum v queue a navázej
+    const queue = await loadQueue();
+    const pendingPosts = queue.posts.filter(p => p.status === 'pending');
+    
+    if (pendingPosts.length > 0) {
+      const lastScheduled = pendingPosts
+        .map(p => new Date(p.scheduledFor))
+        .sort((a, b) => b.getTime() - a.getTime())[0];
+      
+      // Začni od dalšího dne po posledním naplánovaném
+      const nextDay = new Date(lastScheduled);
+      nextDay.setDate(nextDay.getDate() + 1);
+      nextDay.setHours(0, 0, 0, 0);
+      
+      config = { ...config, startDate: nextDay.toISOString() };
+      console.log(`📅 Continuing from: ${nextDay.toISOString()}`);
+    }
+    
     // Generuj posty
     const posts = await generatePosts(sources, config);
     
