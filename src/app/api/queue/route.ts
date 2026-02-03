@@ -37,16 +37,16 @@ export async function DELETE(request: Request) {
     
     const queue = await loadQueue();
     
-    // Clear all pending posts
+    // Clear all posts (pending, scheduled, failed)
     if (clearAll === 'true') {
-      const pendingCount = queue.posts.filter(p => p.status === 'pending').length;
-      queue.posts = queue.posts.filter(p => p.status !== 'pending');
+      const deletedCount = queue.posts.length;
+      queue.posts = [];
       await saveQueue(queue);
       
       return NextResponse.json({
         success: true,
-        message: 'Queue cleared',
-        deleted: pendingCount,
+        message: 'Queue cleared completely',
+        deleted: deletedCount,
       });
     }
     

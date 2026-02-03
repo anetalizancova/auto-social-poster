@@ -10,13 +10,21 @@ import { loadSources, addToQueue, loadQueue } from '@/lib/queue';
 
 export async function POST(request: Request) {
   try {
-    // Volitelně načti config z body
-    let config = {};
+    // Volitelně načti config z query params nebo body
+    const { searchParams } = new URL(request.url);
+    const count = parseInt(searchParams.get('count') || '14');
+    
+    let config: Record<string, unknown> = {
+      totalPosts: count,
+      postsPerDay: Math.min(count, 2),
+      daysAhead: Math.ceil(count / 2),
+    };
+    
     try {
       const body = await request.json();
-      config = body.config || {};
+      config = { ...config, ...body.config };
     } catch {
-      // Bez configu, použij default
+      // Bez body configu
     }
     
     console.log('🤖 Starting post generation...');
