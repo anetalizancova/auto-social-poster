@@ -60,14 +60,14 @@ export async function POST(request: Request) {
     const posts = await generatePosts(sources, config);
     
     // Přidej do fronty
-    const queue = await addToQueue(posts);
+    const updatedQueue = await addToQueue(posts);
     
     return NextResponse.json({
       success: true,
       message: 'Posts generated',
       stats: {
         generated: posts.length,
-        totalInQueue: queue.posts.filter(p => p.status === 'pending').length,
+        totalInQueue: updatedQueue.posts.filter(p => p.status === 'pending').length,
       },
     });
     
