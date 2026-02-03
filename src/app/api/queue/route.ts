@@ -33,7 +33,24 @@ export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const postId = searchParams.get('id');
+    const clearAll = searchParams.get('clearAll');
     
+    const queue = await loadQueue();
+    
+    // Clear all pending posts
+    if (clearAll === 'true') {
+      const pendingCount = queue.posts.filter(p => p.status === 'pending').length;
+      queue.posts = queue.posts.filter(p => p.status !== 'pending');
+      await saveQueue(queue);
+      
+      return NextResponse.json({
+        success: true,
+        message: 'Queue cleared',
+        deleted: pendingCount,
+      });
+    }
+    
+    // Delete single post
     if (!postId) {
       return NextResponse.json({
         success: false,
@@ -41,9 +58,7 @@ export async function DELETE(request: Request) {
       }, { status: 400 });
     }
     
-    const queue = await loadQueue();
     const originalLength = queue.posts.length;
-    
     queue.posts = queue.posts.filter(p => p.id !== postId);
     
     if (queue.posts.length === originalLength) {

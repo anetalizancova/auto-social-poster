@@ -12,7 +12,8 @@ interface Post {
   platform: 'x' | 'threads';
   scheduledFor: string;
   status: 'pending' | 'posted' | 'failed';
-  postUrl?: string;
+  sourceUrl?: string;   // Link v postu (CTA)
+  postUrl?: string;     // URL publikovaného postu
   error?: string;
   createdAt: string;
 }
@@ -37,7 +38,18 @@ interface QueueData {
 
 const TYPE_LABELS: Record<string, string> = {
   webinar_invite: '📅 Webinář',
+  webinar_reminder: '⏰ Reminder',
+  product_benefit: '💎 Benefit',
   product_promo: '🛍️ Promo',
+  product_cta: '🎯 CTA',
+  blog_insight: '📝 Blog',
+  blog_quote: '📖 Článek',
+  blog_tip: '💡 Blog tip',
+  testimonial: '💬 Recenze',
+  brand_mission: '🚀 Brand',
+  ai_tip: '🤖 AI Tip',
+  ai_insight: '🧠 AI Insight',
+  thought_leadership: '✨ Expert',
   quote: '💬 Quote',
   tip: '💡 Tip',
   highlight: '✨ Highlight',
@@ -86,7 +98,7 @@ export default function Dashboard() {
       const res = await fetch('/api/scrape');
       const data = await res.json();
       if (data.success) {
-        alert(`✅ Scrape hotový!\n\nWebináře: ${data.stats.webinars}\nProdukty: ${data.stats.products}\nQuotes: ${data.stats.quotes}`);
+        alert(`✅ Scrape hotový!\n\nWebináře: ${data.stats.webinars}\nProdukty: ${data.stats.products}\nČlánky: ${data.stats.articles || 0}\nTestimonials: ${data.stats.testimonials || 0}\nQuotes: ${data.stats.quotes}`);
       } else {
         alert(`❌ Chyba: ${data.error}`);
       }
@@ -142,6 +154,23 @@ export default function Dashboard() {
       const res = await fetch(`/api/queue?id=${postId}`, { method: 'DELETE' });
       const data = await res.json();
       if (data.success) {
+        fetchQueue();
+      } else {
+        alert(`❌ Chyba: ${data.error}`);
+      }
+    } catch {
+      alert('❌ Chyba při mazání');
+    }
+  };
+
+  const handleClearQueue = async () => {
+    if (!confirm('Opravdu smazat VŠECHNY pending posty?')) return;
+    
+    try {
+      const res = await fetch('/api/queue?clearAll=true', { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        alert(`✅ Smazáno ${data.deleted} postů`);
         fetchQueue();
       } else {
         alert(`❌ Chyba: ${data.error}`);
@@ -241,6 +270,14 @@ export default function Dashboard() {
           >
             🔄 Obnovit
           </button>
+          {(queue?.stats.pending || 0) > 0 && (
+            <button
+              onClick={handleClearQueue}
+              className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
+            >
+              🗑️ Vymazat frontu
+            </button>
+          )}
         </div>
 
         {/* Next Post */}
@@ -351,14 +388,27 @@ function PostCard({
         )}
       </div>
       <p className="text-gray-700 text-sm whitespace-pre-wrap">{content}</p>
+      {post.sourceUrl && (
+        <div className="mt-2 flex items-center gap-1">
+          <span className="text-gray-400 text-xs">🔗</span>
+          <a 
+            href={post.sourceUrl} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-blue-500 text-xs hover:underline truncate max-w-[200px]"
+          >
+            {post.sourceUrl.replace('https://aibility.cz', '')}
+          </a>
+        </div>
+      )}
       {post.postUrl && (
         <a 
           href={post.postUrl} 
           target="_blank" 
           rel="noopener noreferrer"
-          className="text-blue-500 text-xs hover:underline mt-2 inline-block"
+          className="text-green-500 text-xs hover:underline mt-2 inline-block"
         >
-          Zobrazit post →
+          ✅ Zobrazit publikovaný post →
         </a>
       )}
       {post.error && (

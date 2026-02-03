@@ -31,6 +31,8 @@ export async function GET(request: Request) {
       stats: {
         webinars: sources.webinars.length,
         products: sources.products.length,
+        articles: sources.articles.length,
+        testimonials: sources.testimonials.length,
         quotes: sources.quotes.length,
         scrapedAt: sources.scrapedAt,
       },

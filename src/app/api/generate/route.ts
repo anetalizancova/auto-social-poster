@@ -24,7 +24,14 @@ export async function POST(request: Request) {
     // Načti sources
     const sources = await loadSources();
     
-    if (sources.webinars.length === 0 && sources.products.length === 0) {
+    const totalSources = 
+      sources.webinars.length + 
+      sources.products.length + 
+      (sources.articles?.length || 0) + 
+      (sources.testimonials?.length || 0) +
+      sources.quotes.length;
+    
+    if (totalSources === 0) {
       return NextResponse.json({
         success: false,
         error: 'No content sources found. Run /api/scrape first.',
@@ -73,6 +80,8 @@ export async function GET() {
       sources: {
         webinars: sources.webinars.length,
         products: sources.products.length,
+        articles: sources.articles?.length || 0,
+        testimonials: sources.testimonials?.length || 0,
         quotes: sources.quotes.length,
         scrapedAt: sources.scrapedAt,
       },
