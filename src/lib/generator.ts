@@ -115,17 +115,34 @@ function createPostTemplates(sources: ContentSources, totalPosts: number): PostT
     return shuffled;
   };
   
-  // 1. WEBINÁŘE - priorita! (30% obsahu)
+  // 1. WEBINÁŘE - priorita podle data! Nejbližší první
   const webinarSlots = Math.ceil(totalPosts * 0.3);
   const webinars = sources.webinars || [];
   console.log(`📅 Webinars available: ${webinars.length}, slots: ${webinarSlots}`);
   if (webinars.length > 0) {
-    const shuffledWebinars = shuffle(webinars);
-    for (let i = 0; i < Math.min(webinarSlots, shuffledWebinars.length); i++) {
-      const webinar = shuffledWebinars[i];
+    // Seřaď podle data - nejbližší první
+    const sortedWebinars = [...webinars].sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+    
+    // Rozděl na "brzy" (do 14 dnů) a "později"
+    const now = new Date();
+    const twoWeeksLater = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+    
+    const soonWebinars = sortedWebinars.filter(w => new Date(w.date) <= twoWeeksLater);
+    const laterWebinars = sortedWebinars.filter(w => new Date(w.date) > twoWeeksLater);
+    
+    console.log(`  📆 Soon (≤14 days): ${soonWebinars.length}, Later: ${laterWebinars.length}`);
+    
+    // Priorita: nejdřív blízké webináře, pak vzdálenější
+    const prioritizedWebinars = [...soonWebinars, ...shuffle(laterWebinars)];
+    
+    for (let i = 0; i < Math.min(webinarSlots, prioritizedWebinars.length); i++) {
+      const webinar = prioritizedWebinars[i];
+      const daysUntil = Math.ceil((new Date(webinar.date).getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
       const angle = CONTENT_ANGLES.webinar[i % CONTENT_ANGLES.webinar.length];
       addTemplate('webinar_invite', webinar, angle, true, webinar.url);
-      console.log(`  ✅ Added webinar: ${webinar.title}`);
+      console.log(`  ✅ Added webinar: ${webinar.title} (za ${daysUntil} dní)`);
     }
   }
   
