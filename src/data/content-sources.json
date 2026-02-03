@@ -1,0 +1,106 @@
+{
+  "webinars": [],
+  "products": [
+    {
+      "id": "86737a4a-a704-4389-9e99-55961f96c256",
+      "name": "Patříte mezi TOP 3 %?",
+      "tagline": "Patříte mezi TOP 3 %?",
+      "description": "Personalizovaný test vašich AI dovedností za 15 minut. Zjistíte svůj AI typ, silné stránky i mezery. K testu dostanete 30 dní přístup k AI kouči Aimee.",
+      "price": "",
+      "url": "https://aibility.cz/aidovednosti",
+      "features": [],
+      "cta": "Jak dlouho test trvá?"
+    },
+    {
+      "id": "e8ed1198-7252-4df7-870d-03ae7904d2ba",
+      "name": "Aimee",
+      "tagline": "Jste jednu konverzaci od prvního WOW momentu",
+      "description": "Naučte se přemýšlet a pracovat s AI v krátkých konverzacích, které zvládnete mezi meetingy.",
+      "price": "",
+      "url": "https://aibility.cz/aimee",
+      "features": [],
+      "cta": "Načíst další"
+    },
+    {
+      "id": "067a3afe-8b30-40cb-bb72-ce5ec3a6b267",
+      "name": "AI Edu Stream",
+      "tagline": "Zařaďte se mezi lidi se superschopnostmi",
+      "description": "Prémiové webináře, kompletní archiv a komunita nadšenců. Držte krok s AI světem — bez stresu.",
+      "price": "",
+      "url": "https://aibility.cz/ai-edu-stream",
+      "features": [],
+      "cta": "Stát se členem"
+    },
+    {
+      "id": "5e88de5a-2d86-4d19-aa46-2e0bd739aeb4",
+      "name": "Cursor Masterclass",
+      "tagline": "Naučte se Cursor za jeden den",
+      "description": "Cursor je AI agent, který pracuje hodiny bez vašeho dohledu. Workshop pro začátečníky i nevývojáře—postavíte reálný projekt a odejdete s workflow, které můžete použít hned. Praha, 9990 Kč.",
+      "price": "",
+      "url": "https://aibility.cz/cursor",
+      "features": [],
+      "cta": "Je tento kurz na Cursor vhodný pro začátečníky?"
+    },
+    {
+      "id": "d86834fb-2b4c-483f-aa9e-25f2ca168833",
+      "name": "Claude Code Masterclass",
+      "tagline": "",
+      "description": "Získejte superschopnosti díky AI. Naučíme vás ji využívat tak, že ostatní nepochopí, jak to sakra zvládáte.",
+      "price": "",
+      "url": "https://aibility.cz/claudecode",
+      "features": [],
+      "cta": "Zjistit více"
+    }
+  ],
+  "quotes": [
+    {
+      "id": "a277918c-9583-4f6c-a689-c5f56aafcd89",
+      "text": "Aibility dělá AI lidskou. Pomáhá lidem získat superschopnosti díky AI.",
+      "source": "brand",
+      "category": "mission"
+    },
+    {
+      "id": "cab9a91c-0353-4f7e-97c5-60cdf0e25437",
+      "text": "To, co ostatní teprve slibují, my už děláme. To, co učíme, sami žijeme.",
+      "source": "brand",
+      "category": "mission"
+    },
+    {
+      "id": "a000fef4-86aa-4150-8cc3-9b56144f1921",
+      "text": "Jsme AI first. Děláme to jinak a děláme to nejlépe.",
+      "source": "brand",
+      "category": "mission"
+    },
+    {
+      "id": "63fed4fa-4288-4e0b-9f6c-b98853d777c6",
+      "text": "Získejte superschopnosti díky AI.",
+      "source": "brand",
+      "category": "tagline"
+    },
+    {
+      "id": "6eb46df0-b24d-4f27-88ae-efe3ea99fd6e",
+      "text": "Za 3 hodiny zvládnete to, co by vám dřív trvalo celý týden.",
+      "source": "brand",
+      "category": "benefit"
+    },
+    {
+      "id": "0e5e7761-fd27-44c3-981b-41b369aae40c",
+      "text": "Odnesete si funkční prompty a hotovou šablonu. Zítra ušetříte první hodinu.",
+      "source": "brand",
+      "category": "benefit"
+    },
+    {
+      "id": "bd5554f6-833c-40cc-831d-07705cce74aa",
+      "text": "Učte se od nejlepších AI expertů. Získejte přístup ke všem webinářům.",
+      "source": "brand",
+      "category": "benefit"
+    },
+    {
+      "id": "e60cd811-0518-472b-9739-532feaf71ad9",
+      "text": "Nepřekládáme články o budoucnosti práce, ale rovnou ji tvoříme.",
+      "source": "brand",
+      "category": "mission"
+    }
+  ],
+  "scrapedAt": "2026-02-03T15:25:26.622Z"
+}
