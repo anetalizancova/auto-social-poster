@@ -58,8 +58,10 @@ export async function publishPost(post: GeneratedPost, scheduleForLater: boolean
     });
     
     const data = await response.json();
+    console.log(`📤 Upload Post [${response.status}]:`, JSON.stringify(data).substring(0, 500));
     
-    if (data.success) {
+    // 202 = scheduled successfully
+    if (response.status === 202 || data.success) {
       // Získej URL postu z odpovědi
       const platformResult = data.results?.[post.platform];
       
@@ -79,7 +81,7 @@ export async function publishPost(post: GeneratedPost, scheduleForLater: boolean
     
     return {
       success: false,
-      error: data.message || 'Upload failed',
+      error: data.message || data.error || JSON.stringify(data) || 'Upload failed',
     };
     
   } catch (error) {
