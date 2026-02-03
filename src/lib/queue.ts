@@ -221,6 +221,8 @@ export async function loadSources(): Promise<ContentSources> {
   return {
     webinars: [],
     products: [],
+    articles: [],
+    testimonials: [],
     quotes: [],
     scrapedAt: '',
   };
