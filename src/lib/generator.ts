@@ -358,75 +358,94 @@ async function generateSinglePost(template: PostTemplate, platform: Platform): P
     
     let content = response.choices[0]?.message?.content?.trim() || '';
     
-    // POST-PROCESSING: Oprav tykání na vykání
-    content = content
-      // Slovesa
-      .replace(/\bChceš\b/g, 'Chcete')
-      .replace(/\bchceš\b/g, 'chcete')
-      .replace(/\bMáš\b/g, 'Máte')
-      .replace(/\bmáš\b/g, 'máte')
-      .replace(/\bPotřebuješ\b/g, 'Potřebujete')
-      .replace(/\bpotřebuješ\b/g, 'potřebujete')
-      .replace(/\bZajímá tě\b/g, 'Zajímá vás')
-      .replace(/\bzajímá tě\b/g, 'zajímá vás')
-      .replace(/\bPřemýšlíš\b/g, 'Přemýšlíte')
-      .replace(/\bpřemýšlíš\b/g, 'přemýšlíte')
-      .replace(/\bVíš\b/g, 'Víte')
-      .replace(/\bvíš\b/g, 'víte')
-      .replace(/\bVěděl jsi\b/g, 'Věděli jste')
-      .replace(/\bvěděl jsi\b/g, 'věděli jste')
-      .replace(/\bZkus\b/g, 'Zkuste')
-      .replace(/\bzkus\b/g, 'zkuste')
-      .replace(/\bPodívej se\b/g, 'Podívejte se')
-      .replace(/\bpodívej se\b/g, 'podívejte se')
-      .replace(/\bPřijď\b/g, 'Přijďte')
-      .replace(/\bpřijď\b/g, 'přijďte')
-      .replace(/\bZjisti\b/g, 'Zjistěte')
-      .replace(/\bzjisti\b/g, 'zjistěte')
-      .replace(/\bNapiš\b/g, 'Napište')
-      .replace(/\bnapiš\b/g, 'napište')
-      .replace(/\bOtevři\b/g, 'Otevřete')
-      .replace(/\botevři\b/g, 'otevřete')
-      .replace(/\bOtevíráš\b/g, 'Otevíráte')
-      .replace(/\botevíráš\b/g, 'otevíráte')
-      .replace(/\bPíšeš\b/g, 'Píšete')
-      .replace(/\bpíšeš\b/g, 'píšete')
-      .replace(/\bUmíš\b/g, 'Umíte')
-      .replace(/\bumíš\b/g, 'umíte')
-      .replace(/\bNenech\b/g, 'Nenechte')
-      .replace(/\bnenech\b/g, 'nenechte')
-      .replace(/\bPřiprav se\b/g, 'Připravte se')
-      .replace(/\bpřiprav se\b/g, 'připravte se')
-      .replace(/\bZačni\b/g, 'Začněte')
-      .replace(/\bzačni\b/g, 'začněte')
-      .replace(/\bZískej\b/g, 'Získejte')
-      .replace(/\bzískej\b/g, 'získejte')
-      .replace(/\bPřihlas se\b/g, 'Přihlaste se')
-      .replace(/\bpřihlas se\b/g, 'přihlaste se')
-      .replace(/\bSpoj se\b/g, 'Spojte se')
-      .replace(/\bspoj se\b/g, 'spojte se')
-      .replace(/\bPředstav si\b/g, 'Představte si')
-      .replace(/\bpředstav si\b/g, 'představte si')
-      .replace(/\bUvidíš\b/g, 'Uvidíte')
-      .replace(/\buvidíš\b/g, 'uvidíte')
-      // Zájmena
-      .replace(/\btě\b/g, 'vás')
-      .replace(/\btobě\b/g, 'vám')
-      .replace(/\bti\b(?!\s)/g, 'vám') // "ti" ale ne "tipy"
-      .replace(/\bTvůj\b/g, 'Váš')
-      .replace(/\btvůj\b/g, 'váš')
-      .replace(/\bTvoje\b/g, 'Vaše')
-      .replace(/\btvoje\b/g, 'vaše')
-      .replace(/\bTvá\b/g, 'Vaše')
-      .replace(/\btvá\b/g, 'vaše')
+    // POST-PROCESSING: Oprav tykání na vykání - rozsáhlý seznam
+    const tykaniFixes: [RegExp, string][] = [
+      // Imperativy (rozkazovací způsob)
+      [/\bChceš\b/gi, 'Chcete'],
+      [/\bMáš\b/gi, 'Máte'],
+      [/\bZkus\b/gi, 'Zkuste'],
+      [/\bZjisti\b/gi, 'Zjistěte'],
+      [/\bPřijď\b/gi, 'Přijďte'],
+      [/\bPřidej se\b/gi, 'Přidejte se'],
+      [/\bPřipoj se\b/gi, 'Připojte se'],
+      [/\bNauč se\b/gi, 'Naučte se'],
+      [/\bPodívej se\b/gi, 'Podívejte se'],
+      [/\bPřihlas se\b/gi, 'Přihlaste se'],
+      [/\bZačni\b/gi, 'Začněte'],
+      [/\bZískej\b/gi, 'Získejte'],
+      [/\bVyzkoušej\b/gi, 'Vyzkoušejte'],
+      [/\bPředstav si\b/gi, 'Představte si'],
+      [/\bZaměř se\b/gi, 'Zaměřte se'],
+      [/\bOtevři\b/gi, 'Otevřete'],
+      [/\bNapiš\b/gi, 'Napište'],
+      [/\bVydej se\b/gi, 'Vydejte se'],
+      [/\bNezmeškej\b/gi, 'Nezmeškejte'],
+      [/\bNenech\b/gi, 'Nenechte'],
+      [/\bNezůstávej\b/gi, 'Nezůstávejte'],
+      [/\bPoznej\b/gi, 'Poznejte'],
+      
+      // Přítomný čas - 2. osoba jednotného čísla
+      [/\bpotřebuješ\b/gi, 'potřebujete'],
+      [/\bpřemýšlíš\b/gi, 'přemýšlíte'],
+      [/\botevíráš\b/gi, 'otevíráte'],
+      [/\bpíšeš\b/gi, 'píšete'],
+      [/\bumíš\b/gi, 'umíte'],
+      [/\bvíš\b/gi, 'víte'],
+      [/\buvidíš\b/gi, 'uvidíte'],
+      [/\bdostaneš\b/gi, 'dostanete'],
+      [/\bdozvíš\b/gi, 'dozvíte'],
+      [/\bnaučíš\b/gi, 'naučíte'],
+      [/\bzískáš\b/gi, 'získáte'],
+      [/\bušetříš\b/gi, 'ušetříte'],
+      [/\bspoléháš\b/gi, 'spoléháte'],
+      [/\btrávíš\b/gi, 'trávíte'],
+      [/\bnejsi\b/gi, 'nejste'],
+      [/\bjsi\b/gi, 'jste'],
+      
       // Minulý čas
-      .replace(/\bnarazil jsi\b/g, 'narazili jste')
-      .replace(/\bslyšel jsi\b/g, 'slyšeli jste')
-      .replace(/\bvybudoval jsi\b/g, 'vybudovali jste')
-      .replace(/\bzkusil jsi\b/g, 'zkusili jste')
-      // Fix případné chyby
-      .replace(/vám ukážeme/g, 'vám ukážeme')
-      .replace(/vás uzamykáš/g, 'vás uzamykáte');
+      [/\bPřemýšlel jsi\b/gi, 'Přemýšleli jste'],
+      [/\bSlyšel jsi\b/gi, 'Slyšeli jste'],
+      [/\bVěděl jsi\b/gi, 'Věděli jste'],
+      [/\bNarazil jsi\b/gi, 'Narazili jste'],
+      [/\bZkusil jsi\b/gi, 'Zkusili jste'],
+      [/\bVybudoval jsi\b/gi, 'Vybudovali jste'],
+      
+      // Přivlastňovací zájmena
+      [/\btvůj\b/gi, 'váš'],
+      [/\btvoje\b/gi, 'vaše'],
+      [/\btvá\b/gi, 'vaše'],
+      [/\btvým\b/gi, 'vaším'],
+      [/\btvé\b/gi, 'vaše'],
+      [/\btvou\b/gi, 'vaši'],
+      
+      // Osobní zájmena - pozor na kontext
+      [/\btě\b/g, 'vás'],
+      [/\btobě\b/g, 'vám'],
+      [/\bTobě\b/g, 'Vám'],
+      
+      // Speciální fráze
+      [/\bZajímá tě\b/gi, 'Zajímá vás'],
+      [/\bFrustruje tě\b/gi, 'Frustruje vás'],
+      [/\bFrustrují tě\b/gi, 'Frustrují vás'],
+      [/\btě to\b/g, 'vás to'],
+      [/\bti to\b/g, 'vám to'],
+      [/\bti pomůže\b/g, 'vám pomůže'],
+      [/\bti pomůžou\b/g, 'vám pomůžou'],
+      [/\bti ukáže\b/g, 'vám ukáže'],
+      [/\bti dají\b/g, 'vám dají'],
+      [/\bti dá\b/g, 'vám dá'],
+      [/\bti otevře\b/g, 'vám otevře'],
+      [/\bpro tebe\b/gi, 'pro vás'],
+      [/\bu tebe\b/gi, 'u vás'],
+    ];
+    
+    for (const [pattern, replacement] of tykaniFixes) {
+      content = content.replace(pattern, replacement);
+    }
+    
+    // Speciální opravy - "ti" je problematické (tipy, strategie, atd.)
+    // Nahraď jen "ti " následované malým písmenem (slovesem)
+    content = content.replace(/\bti ([a-z])/g, 'vám $1');
     
     // Ořízni pokud je moc dlouhé
     if (content.length > maxLength) {
