@@ -26,6 +26,12 @@ export async function POST(request: Request) {
     console.log('Warning: Missing or invalid CRON_SECRET');
   }
   
+  // Volitelný count parametr pro testování (default 14)
+  const { searchParams } = new URL(request.url);
+  const count = parseInt(searchParams.get('count') || '14');
+  const postsPerDay = Math.min(count, 2);
+  const daysAhead = Math.ceil(count / postsPerDay);
+  
   const startTime = Date.now();
   const results: {
     scrape?: { webinars: number; products: number; articles: number };
@@ -35,7 +41,7 @@ export async function POST(request: Request) {
   } = {};
   
   try {
-    console.log('🚀 Starting full automation...');
+    console.log(`🚀 Starting automation (count=${count})...`);
     
     // 1. SCRAPE
     console.log('📥 Step 1: Scraping website...');
@@ -49,12 +55,12 @@ export async function POST(request: Request) {
     };
     console.log(`✅ Scraped: ${sources.webinars.length} webinars, ${sources.products.length} products, ${sources.articles?.length || 0} articles`);
     
-    // 2. GENERATE - 14 postů na týden (2 denně)
-    console.log('🤖 Step 2: Generating posts...');
+    // 2. GENERATE
+    console.log(`🤖 Step 2: Generating ${count} posts...`);
     const posts = await generatePosts(sources, { 
-      totalPosts: 14,
-      daysAhead: 7,
-      postsPerDay: 2,
+      totalPosts: count,
+      daysAhead: daysAhead,
+      postsPerDay: postsPerDay,
     });
     
     results.generate = { posts: posts.length };
