@@ -1,53 +1,77 @@
 /**
- * Queue Management
+ * Queue Management with Redis Storage
  * 
- * Správa fronty postů
+ * Správa fronty postů s persistentním Redis storage
  */
 
-import { promises as fs } from 'fs';
-import path from 'path';
+import { createClient, RedisClientType } from 'redis';
 import type { PostsQueue, GeneratedPost, ContentSources } from './types';
 
-const DATA_DIR = path.join(process.cwd(), 'src', 'data');
-const QUEUE_FILE = path.join(DATA_DIR, 'posts-queue.json');
-const SOURCES_FILE = path.join(DATA_DIR, 'content-sources.json');
+// Redis keys
+const QUEUE_KEY = 'auto-poster:queue';
+const SOURCES_KEY = 'auto-poster:sources';
+
+// Singleton Redis client
+let redis: RedisClientType | null = null;
 
 /**
- * Zajisti že data složka existuje
+ * Get Redis client (singleton pattern)
  */
-async function ensureDataDir() {
-  try {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-  } catch {
-    // Složka už existuje
+async function getRedis(): Promise<RedisClientType> {
+  if (redis && redis.isOpen) {
+    return redis;
   }
+
+  const url = process.env.REDIS_URL;
+  
+  if (!url) {
+    throw new Error('REDIS_URL environment variable is not set');
+  }
+
+  redis = createClient({ url });
+  
+  redis.on('error', (err) => {
+    console.error('Redis Client Error:', err);
+  });
+
+  await redis.connect();
+  return redis;
 }
 
 /**
- * Načti frontu postů
+ * Načti frontu postů z Redis
  */
 export async function loadQueue(): Promise<PostsQueue> {
-  await ensureDataDir();
-  
   try {
-    const data = await fs.readFile(QUEUE_FILE, 'utf-8');
-    return JSON.parse(data);
-  } catch {
-    // Soubor neexistuje, vrať prázdnou frontu
-    return {
-      posts: [],
-      lastGenerated: '',
-      lastPosted: '',
-    };
+    const client = await getRedis();
+    const data = await client.get(QUEUE_KEY);
+    
+    if (data) {
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('Error loading queue from Redis:', error);
   }
+  
+  // Vrať prázdnou frontu jako fallback
+  return {
+    posts: [],
+    lastGenerated: '',
+    lastPosted: '',
+  };
 }
 
 /**
- * Ulož frontu postů
+ * Ulož frontu postů do Redis
  */
 export async function saveQueue(queue: PostsQueue): Promise<void> {
-  await ensureDataDir();
-  await fs.writeFile(QUEUE_FILE, JSON.stringify(queue, null, 2));
+  try {
+    const client = await getRedis();
+    await client.set(QUEUE_KEY, JSON.stringify(queue));
+  } catch (error) {
+    console.error('Error saving queue to Redis:', error);
+    throw error;
+  }
 }
 
 /**
@@ -180,28 +204,37 @@ export async function cleanOldPosts(): Promise<number> {
 }
 
 /**
- * Načti content sources
+ * Načti content sources z Redis
  */
 export async function loadSources(): Promise<ContentSources> {
-  await ensureDataDir();
-  
   try {
-    const data = await fs.readFile(SOURCES_FILE, 'utf-8');
-    return JSON.parse(data);
-  } catch {
-    return {
-      webinars: [],
-      products: [],
-      quotes: [],
-      scrapedAt: '',
-    };
+    const client = await getRedis();
+    const data = await client.get(SOURCES_KEY);
+    
+    if (data) {
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('Error loading sources from Redis:', error);
   }
+  
+  return {
+    webinars: [],
+    products: [],
+    quotes: [],
+    scrapedAt: '',
+  };
 }
 
 /**
- * Ulož content sources
+ * Ulož content sources do Redis
  */
 export async function saveSources(sources: ContentSources): Promise<void> {
-  await ensureDataDir();
-  await fs.writeFile(SOURCES_FILE, JSON.stringify(sources, null, 2));
+  try {
+    const client = await getRedis();
+    await client.set(SOURCES_KEY, JSON.stringify(sources));
+  } catch (error) {
+    console.error('Error saving sources to Redis:', error);
+    throw error;
+  }
 }
