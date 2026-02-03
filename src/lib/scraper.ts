@@ -35,65 +35,83 @@ async function fetchPage(url: string): Promise<string> {
 }
 
 /**
- * Scrape webináře z /webinare/nejblizsi-akce
+ * Webináře - Framer web je JS-rendered, tak použijeme aktuální data
+ * Aktualizovat ručně nebo přes API když bude dostupné
  */
 async function scrapeWebinars(): Promise<ScrapedWebinar[]> {
-  const webinars: ScrapedWebinar[] = [];
+  // Aktuální webináře z aibility.cz/webinare/nejblizsi-akce
+  // Poslední update: 3.2.2026
+  const upcomingWebinars: Omit<ScrapedWebinar, 'id'>[] = [
+    {
+      title: 'AI Morning Show',
+      description: 'Reálné ukázky z AI-first firmy, praktické tipy i novinky ze světa AI.',
+      date: '2026-02-04T08:00:00',
+      time: '08:00',
+      url: `${BASE_URL}/webinare/ai-morning-show-2`,
+      price: 'Zdarma',
+      type: 'live',
+    },
+    {
+      title: 'Midjourney Masterclass: Tvořte vizuály jako profík',
+      description: 'Naučte se, jak z Midjourney dostat vizuály, které drží styl, sedí na brand a dají se zopakovat.',
+      date: '2026-02-11T11:00:00',
+      time: '11:00',
+      url: `${BASE_URL}/webinare/midjourney-masterclass-tvorte-vizualy-jako-profik`,
+      price: '1 490 Kč',
+      type: 'live',
+    },
+    {
+      title: 'Klíč k adopci AI: Revoluční metodika Superpowered Professional',
+      description: 'AI adopci nerozjedou nástroje. Rozjedou ji lidé se správným mindsetem. Najděte ty své.',
+      date: '2026-02-19T10:00:00',
+      time: '10:00',
+      url: `${BASE_URL}/webinare/klic-k-adopci-ai-revolucni-metodika-superpowered-professional`,
+      price: 'Zdarma',
+      type: 'live',
+    },
+    {
+      title: 'Cursor od základů: 90 minut, které změní způsob, jak pracujete',
+      description: 'Cursor je nástroj, který dává znalostním pracovníkům superschopnosti. Naučte se ho využívat naplno.',
+      date: '2026-02-24T10:00:00',
+      time: '10:00',
+      url: `${BASE_URL}/webinare/cursor-od-zakladu-90-minut-ktere-zmeni-zpusob-jak-pracujete`,
+      price: '990 Kč',
+      type: 'live',
+    },
+    {
+      title: 'Vibe coding v praxi: Od prototypu k živé appce',
+      description: 'Naučíme vás workflow, se kterým z každého nápadu uděláte funkční appku s odkazem, který můžete poslat dál.',
+      date: '2026-03-10T10:00:00',
+      time: '10:00',
+      url: `${BASE_URL}/webinare/vibe-coding-v-praxi-od-prototypu-k-zive-appce`,
+      price: '1 490 Kč',
+      type: 'live',
+    },
+    {
+      title: 'AI agent, který sbírá data za vás: Cursor + Apify v praxi',
+      description: 'Ruční sběr dat je brzda. Ukážeme vám workflow, se kterým váš AI agent projde weby, posbírá data a připraví výstup.',
+      date: '2026-03-24T11:00:00',
+      time: '11:00',
+      url: `${BASE_URL}/webinare/ai-agent-ktery-sbira-data-za-vas-cursor-apify-v-praxi`,
+      price: '1 490 Kč',
+      type: 'live',
+    },
+    {
+      title: 'Intro do Claude Code',
+      description: 'Claude Code je jeden z nejsilnějších AI nástrojů současnosti. Zjistěte, jak funguje a jak ho začít používat.',
+      date: '2026-04-02T10:00:00',
+      time: '10:00',
+      url: `${BASE_URL}/webinare/intro-do-claude-code`,
+      price: '990 Kč',
+      type: 'live',
+    },
+  ];
   
-  try {
-    const html = await fetchPage(`${BASE_URL}/webinare/nejblizsi-akce`);
-    const $ = cheerio.load(html);
-    
-    // Najdi všechny webinářové karty/sekce
-    $('[class*="webinar"], [class*="event"], [data-webinar], .card').each((_, el) => {
-      const $el = $(el);
-      
-      const title = $el.find('h2, h3, [class*="title"]').first().text().trim();
-      const description = $el.find('p, [class*="description"]').first().text().trim();
-      const dateText = $el.find('[class*="date"], time').first().text().trim();
-      const link = $el.find('a[href*="/webinare/"]').first().attr('href');
-      const priceText = $el.find('[class*="price"]').first().text().trim();
-      
-      if (title && link) {
-        webinars.push({
-          id: uuid(),
-          title,
-          description: description || '',
-          date: parseDate(dateText),
-          time: parseTime(dateText),
-          url: link.startsWith('http') ? link : `${BASE_URL}${link}`,
-          price: priceText || 'zdarma',
-          type: 'live',
-        });
-      }
-    });
-    
-    // Fallback
-    if (webinars.length === 0) {
-      $('a[href*="/webinare/"]').each((_, el) => {
-        const href = $(el).attr('href');
-        const text = $(el).text().trim();
-        
-        if (href && !href.includes('nejblizsi-akce') && text.length > 5) {
-          webinars.push({
-            id: uuid(),
-            title: text,
-            description: '',
-            date: new Date().toISOString(),
-            time: '17:00',
-            url: href.startsWith('http') ? href : `${BASE_URL}${href}`,
-            price: 'zdarma',
-            type: 'live',
-          });
-        }
-      });
-    }
-    
-  } catch (error) {
-    console.error('Error scraping webinars:', error);
-  }
+  // Filtruj pouze budoucí webináře
+  const now = new Date();
+  const futureWebinars = upcomingWebinars.filter(w => new Date(w.date) > now);
   
-  return webinars;
+  return futureWebinars.map(w => ({ id: uuid(), ...w }));
 }
 
 /**

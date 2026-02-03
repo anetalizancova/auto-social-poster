@@ -336,7 +336,13 @@ function schedulePostsWithVariety(
   posts: { template: PostTemplate; content_x: string; content_threads: string }[],
   config: GenerateConfig
 ): GeneratedPost[] {
-  const startDate = config.startDate ? new Date(config.startDate) : new Date();
+  const now = new Date();
+  let startDate = config.startDate ? new Date(config.startDate) : new Date();
+  
+  // Začni od zítřka - dnes už většinou nestíháme
+  startDate = addDays(startDate, 1);
+  startDate.setHours(0, 0, 0, 0);
+  
   const scheduled: GeneratedPost[] = [];
   
   // Střídej platformy: X, Threads, X, Threads...
