@@ -43,9 +43,10 @@ export async function publishPost(post: GeneratedPost, scheduleForLater: boolean
     // Pokud chceme naplánovat na později
     if (scheduleForLater && post.scheduledFor) {
       const scheduledDate = new Date(post.scheduledFor);
-      // Upload Post API očekává ISO string nebo Unix timestamp
-      formData.append('schedule', scheduledDate.toISOString());
-      console.log(`📅 Scheduling for: ${scheduledDate.toISOString()}`);
+      // Upload Post API očekává 'scheduled_date' v ISO formátu + timezone
+      formData.append('scheduled_date', scheduledDate.toISOString());
+      formData.append('timezone', 'Europe/Prague');
+      console.log(`📅 Scheduling for: ${scheduledDate.toISOString()} (Europe/Prague)`);
     }
     
     const response = await fetch(`${API_URL}/upload_text`, {

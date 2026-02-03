@@ -173,7 +173,7 @@ function createPostTemplates(sources: ContentSources, totalPosts: number): PostT
     }
   }
   
-  // 4. TESTIMONIALS (10% obsahu)
+  // 4. TESTIMONIALS (10% obsahu) - s linkem na Aibility
   const testimonialSlots = Math.ceil(totalPosts * 0.1);
   const testimonials = sources.testimonials || [];
   console.log(`💬 Testimonials available: ${testimonials.length}, slots: ${testimonialSlots}`);
@@ -182,11 +182,11 @@ function createPostTemplates(sources: ContentSources, totalPosts: number): PostT
     for (let i = 0; i < Math.min(testimonialSlots, shuffledTestimonials.length); i++) {
       const testimonial = shuffledTestimonials[i];
       const angle = CONTENT_ANGLES.testimonial[i % CONTENT_ANGLES.testimonial.length];
-      addTemplate('testimonial', testimonial, angle, false);
+      addTemplate('testimonial', testimonial, angle, true, 'https://aibility.cz');
     }
   }
   
-  // 5. AI TIPY (10% obsahu)
+  // 5. AI TIPY (10% obsahu) - s linkem na Aibility
   const aiTips = [
     { tip: 'Když používáte ChatGPT, začněte "Jednej jako..." a dejte AI roli experta.', tool: 'ChatGPT' },
     { tip: 'V Claude používejte XML tagy pro strukturování složitějších promptů.', tool: 'Claude' },
@@ -199,7 +199,8 @@ function createPostTemplates(sources: ContentSources, totalPosts: number): PostT
   const shuffledTips = shuffle(aiTips);
   for (let i = 0; i < Math.min(tipSlots, shuffledTips.length); i++) {
     const tip = shuffledTips[i];
-    addTemplate('ai_tip', { id: uuid(), text: tip.tip, source: tip.tool, category: 'tip' } as ScrapedQuote, 'practical', false);
+    // AI tipy s linkem na aibility.cz
+    addTemplate('ai_tip', { id: uuid(), text: tip.tip, source: tip.tool, category: 'tip' } as ScrapedQuote, 'practical', true, 'https://aibility.cz');
   }
   
   // Log template counts
@@ -226,20 +227,23 @@ function createPostTemplates(sources: ContentSources, totalPosts: number): PostT
  * Vytvoř prompt pro konkrétní template
  */
 function buildPrompt(template: PostTemplate, platform: Platform): string {
-  const maxLength = platform === 'x' ? 270 : 480; // Nechej prostor pro link
+  const maxLength = platform === 'x' ? 260 : 460; // Nechej prostor pro link
   const { type, source, angle, includeLink, linkUrl } = template;
   
-  // KRITICKÉ: Genderově neutrální jazyk
-  let prompt = `⚠️ GENDEROVĚ NEUTRÁLNÍ! Tykání OK, ale NIKDY maskulinní minulý čas.
-ZAKÁZÁNO: "Přemýšlel jsi", "Věděl jsi", "Chtěl bys", "Zkoušel jsi", "Narazil jsi"
-MÍSTO TOHO: "Přemýšlíte...", "Věděli jste...", "Zkoušíš...", "Znáte to..."
+  // KRITICKÉ PRAVIDLA HNED NA ZAČÁTEK
+  let prompt = `⚠️ KRITICKÁ PRAVIDLA (porušení = FAIL):
+1. VŽDY VYKEJ v celém postu! Nikdy nemíchej tykání a vykání!
+   ✅ "Chcete vědět... Zjistěte víc:"
+   ❌ "Chceš vědět... Zjistěte víc:" (ZAKÁZÁNO - míchá!)
+2. NIKDY NEZMIŇUJ CENY! Žádné "Cena je X Kč", "za X Kč"
+3. Max ${maxLength} znaků (bez linku)
 
-Vygeneruj ${platform === 'x' ? 'tweet' : 'Threads post'} (max ${maxLength} znaků bez linku) pro Aibility.\n\n`;
+Vygeneruj ${platform === 'x' ? 'tweet' : 'Threads post'} pro Aibility.\n\n`;
   
   // Přidej CTA info
   if (includeLink && linkUrl) {
-    prompt += `NA KONEC PŘIDEJ CTA s odkazem: ${linkUrl}\n`;
-    prompt += `Příklady CTA: "Víc na:", "Zjistěte víc:", "Vyzkoušejte:", "Přihlaste se:"\n\n`;
+    prompt += `📎 NA KONEC přidej CTA s linkem: ${linkUrl}
+Příklady: "Víc na:", "Zjistěte víc:", "Vyzkoušejte:"\n\n`;
   }
   
   prompt += `ÚHEL: ${angle.replace(/_/g, ' ')}\n\n`;
@@ -254,14 +258,15 @@ Tagline: ${product.tagline}
 Popis: ${product.description}
 Features: ${product.features.slice(0, 3).join(', ')}
 
+⚠️ NEZMIŇUJ CENU!
+
 ÚHEL "${angle}":
-- benefit_focused: Vyzdvihni jeden konkrétní benefit, proč ho potřebují
-- problem_solution: Jaký problém řeší? Začni problémem, pak řešení
+- benefit_focused: Jeden konkrétní benefit, proč ho potřebují
+- problem_solution: Problém → řešení
 - social_proof: Pro koho je, kdo ho používá
-- urgency: Proč by měli začít teď
-- curiosity: Polož otázku, vzbuď zvědavost
-- how_it_works: Jak to funguje v praxi (konkrétní příklad)
-- direct_cta: Přímá výzva k akci`;
+- urgency: Proč začít teď
+- curiosity: Otázka, vzbuď zvědavost
+- how_it_works: Jak to funguje v praxi`;
       break;
       
     case 'webinar_invite':
@@ -341,17 +346,19 @@ Buď originální, ne klišé.`;
   }
   
   prompt += `\n\n---
-PRAVIDLA:
-1. Piš česky, přirozeně, jako člověk
-2. Žádné generické fráze ("V dnešní době", "Není žádným tajemstvím")
-3. Jeden jasný message per post
-4. Emoji max 2, a jen pokud sedí
-5. ${includeLink ? 'NEZAPOMEŇ na CTA s linkem na konci!' : 'Žádný link nepřidávej.'}
-6. Tykání OK, ale NIKDY maskulinní minulý čas!
-7. ZAKÁZÁNO: "Přemýšlel jsi", "Věděl jsi", "Chtěl bys", "Zkoušel jsi"
-8. MÍSTO TOHO: "Přemýšlíš...", "Věděli jste...", "Znáte to...", "Zkoušíte..."
+PRAVIDLA (DODRŽUJ!):
+1. CELÝ post ve VYKÁNÍ: "Chcete", "Máte", "Znáte", "Víte"
+2. ŽÁDNÉ CENY - nikdy nezmiňuj kolik co stojí
+3. Žádné generické fráze ("V dnešní době", "Není žádným tajemstvím")
+4. Jeden jasný message per post
+5. Emoji max 1-2
+6. ${includeLink ? 'NA KONCI CTA s linkem!' : ''}
+7. Piš jako smart kamarád, ne jako korporát
 
-VRAŤ POUZE TEXT POSTU. Žádné uvozovky, žádné vysvětlení.`;
+PŘÍKLAD DOBRÉHO POSTU:
+"Víte, kolik času strávíte přepisováním poznámek? S AI to zvládnete za minuty. Vyzkoušejte: [link]"
+
+VRAŤ POUZE TEXT POSTU. Žádné uvozovky.`;
   
   return prompt;
 }
@@ -376,42 +383,87 @@ async function generateSinglePost(template: PostTemplate, platform: Platform): P
     
     let content = response.choices[0]?.message?.content?.trim() || '';
     
-    // POST-PROCESSING: Oprav pouze MASKULINNÍ minulý čas (tykání je OK)
-    const masculineFixes: [RegExp, string][] = [
-      // Maskulinní minulý čas → neutrální vykání
+    // POST-PROCESSING: 
+    
+    // 1. Odstraň ceny
+    content = content.replace(/\s*Cena( je)?:?\s*\d[\d\s]*\s*Kč\.?/gi, '');
+    content = content.replace(/\s*[Zz]a\s+\d[\d\s]*\s*Kč/gi, '');
+    content = content.replace(/\s*\d[\d\s]*\s*Kč/gi, '');
+    
+    // 2. Převeď VŠECHNO tykání na vykání (ne jen maskulinní)
+    const tykaníToVykání: [RegExp, string][] = [
+      // Přítomný čas
+      [/\bChceš\b/g, 'Chcete'],
+      [/\bchceš\b/g, 'chcete'],
+      [/\bMáš\b/g, 'Máte'],
+      [/\bmáš\b/g, 'máte'],
+      [/\bVíš\b/g, 'Víte'],
+      [/\bvíš\b/g, 'víte'],
+      [/\bZnáš\b/g, 'Znáte'],
+      [/\bznáš\b/g, 'znáte'],
+      [/\bPotřebuješ\b/g, 'Potřebujete'],
+      [/\bpotřebuješ\b/g, 'potřebujete'],
+      [/\bMůžeš\b/g, 'Můžete'],
+      [/\bmůžeš\b/g, 'můžete'],
+      [/\bUmíš\b/g, 'Umíte'],
+      [/\bumíš\b/g, 'umíte'],
+      [/\bZajímá tě\b/g, 'Zajímá vás'],
+      [/\bzajímá tě\b/g, 'zajímá vás'],
+      [/\bBavilo by tě\b/g, 'Bavilo by vás'],
+      [/\bZkoušíš\b/g, 'Zkoušíte'],
+      [/\bzkoušíš\b/g, 'zkoušíte'],
+      [/\bPoužíváš\b/g, 'Používáte'],
+      [/\bpoužíváš\b/g, 'používáte'],
+      [/\bPracuješ\b/g, 'Pracujete'],
+      [/\bpracuješ\b/g, 'pracujete'],
+      [/\bTrávíš\b/g, 'Trávíte'],
+      [/\btrávíš\b/g, 'trávíte'],
+      [/\bHledáš\b/g, 'Hledáte'],
+      [/\bhledáš\b/g, 'hledáte'],
+      
+      // Rozkazovací způsob
+      [/\bNauč se\b/g, 'Naučte se'],
+      [/\bnauč se\b/g, 'naučte se'],
+      [/\bPřihlas se\b/g, 'Přihlaste se'],
+      [/\bpřihlas se\b/g, 'přihlaste se'],
+      [/\bVyzkoušej\b/g, 'Vyzkoušejte'],
+      [/\bvyzkoušej\b/g, 'vyzkoušejte'],
+      [/\bZkus\b/g, 'Zkuste'],
+      [/\bzkus\b/g, 'zkuste'],
+      [/\bPodívej se\b/g, 'Podívejte se'],
+      [/\bpodívej se\b/g, 'podívejte se'],
+      [/\bZjisti\b/g, 'Zjistěte'],
+      [/\bzjisti\b/g, 'zjistěte'],
+      
+      // Minulý čas (maskulinní i obecné)
       [/\bPřemýšlel jsi\b/gi, 'Přemýšleli jste'],
-      [/\bpřemýšlel jsi\b/gi, 'přemýšleli jste'],
       [/\bSlyšel jsi\b/gi, 'Slyšeli jste'],
-      [/\bslyšel jsi\b/gi, 'slyšeli jste'],
       [/\bVěděl jsi\b/gi, 'Věděli jste'],
-      [/\bvěděl jsi\b/gi, 'věděli jste'],
-      [/\bNarazil jsi\b/gi, 'Narazili jste'],
-      [/\bnarazil jsi\b/gi, 'narazili jste'],
-      [/\bZkusil jsi\b/gi, 'Zkusili jste'],
-      [/\bzkusil jsi\b/gi, 'zkusili jste'],
       [/\bZkoušel jsi\b/gi, 'Zkoušeli jste'],
-      [/\bzkoušel jsi\b/gi, 'zkoušeli jste'],
       [/\bViděl jsi\b/gi, 'Viděli jste'],
-      [/\bviděl jsi\b/gi, 'viděli jste'],
       [/\bChtěl jsi\b/gi, 'Chtěli jste'],
-      [/\bchtěl jsi\b/gi, 'chtěli jste'],
       [/\bChtěl bys\b/gi, 'Chtěli byste'],
-      [/\bchtěl bys\b/gi, 'chtěli byste'],
       [/\bMohl bys\b/gi, 'Mohli byste'],
-      [/\bmohl bys\b/gi, 'mohli byste'],
       [/\bMěl jsi\b/gi, 'Měli jste'],
-      [/\bměl jsi\b/gi, 'měli jste'],
-      [/\bByl jsi\b/gi, 'Byli jste'],
-      [/\bbyl jsi\b/gi, 'byli jste'],
-      [/\bDostal jsi\b/gi, 'Dostali jste'],
-      [/\bdostal jsi\b/gi, 'dostali jste'],
-      [/\bSetkal jsi se\b/gi, 'Setkali jste se'],
-      [/\bsetkal jsi se\b/gi, 'setkali jste se'],
+      [/\bNarazil jsi\b/gi, 'Narazili jste'],
+      
+      // Zájmena
+      [/\btebe\b/g, 'vás'],
+      [/\btobě\b/g, 'vám'],
+      [/\btvůj\b/g, 'váš'],
+      [/\btvá\b/g, 'vaše'],
+      [/\btvé\b/g, 'vaše'],
+      [/\btvojí\b/g, 'vaší'],
+      [/\b ti \b/g, ' vám '],
+      [/\b tě \b/g, ' vás '],
     ];
     
-    for (const [pattern, replacement] of masculineFixes) {
+    for (const [pattern, replacement] of tykaníToVykání) {
       content = content.replace(pattern, replacement);
     }
+    
+    // 3. Vyčisti případné dvojité mezery
+    content = content.replace(/\s+/g, ' ').trim();
     
     // Ořízni pokud je moc dlouhé
     if (content.length > maxLength) {
