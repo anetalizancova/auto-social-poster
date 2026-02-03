@@ -20,8 +20,14 @@ import type {
   ScrapedQuote,
 } from './types';
 
+// Use OpenRouter API (key starts with sk-or-)
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  baseURL: 'https://openrouter.ai/api/v1',
+  defaultHeaders: {
+    'HTTP-Referer': 'https://auto-social-poster.vercel.app',
+    'X-Title': 'Aibility Auto Social Poster',
+  },
 });
 
 /**
