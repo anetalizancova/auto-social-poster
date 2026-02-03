@@ -88,75 +88,83 @@ const CONTENT_ANGLES: Record<string, string[]> = {
 };
 
 /**
- * Vytvoř rozmanitý mix post templates
+ * Vytvoř VYVÁŽENÝ mix post templates - důraz na variety
  */
 function createPostTemplates(sources: ContentSources, totalPosts: number): PostTemplate[] {
   const templates: PostTemplate[] = [];
-  const usedCombinations = new Set<string>();
+  const usedSources = new Set<string>(); // Omez jeden zdroj na 1 post
   
-  // Helper pro přidání unikátní kombinace
-  const addUnique = (
+  // Helper pro přidání
+  const addTemplate = (
     type: ContentType, 
     source: PostTemplate['source'], 
     angle: string,
     includeLink: boolean,
     linkUrl?: string
   ) => {
-    const key = `${type}-${source?.id || 'none'}-${angle}`;
-    if (!usedCombinations.has(key)) {
-      usedCombinations.add(key);
-      templates.push({ type, source, angle, includeLink, linkUrl });
-    }
+    templates.push({ type, source, angle, includeLink, linkUrl });
   };
   
-  // 1. Produkty - různé úhly, s linky
-  for (const product of sources.products) {
-    for (const angle of CONTENT_ANGLES.product.slice(0, 3)) { // 3 úhly na produkt
-      addUnique('product_benefit', product, angle, true, product.url);
+  // Shuffle helper
+  const shuffle = <T>(arr: T[]): T[] => {
+    const shuffled = [...arr];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
-    addUnique('product_cta', product, 'direct_cta', true, product.url);
+    return shuffled;
+  };
+  
+  // 1. WEBINÁŘE - priorita! (30% obsahu)
+  const webinarSlots = Math.ceil(totalPosts * 0.3);
+  const shuffledWebinars = shuffle(sources.webinars);
+  for (let i = 0; i < Math.min(webinarSlots, shuffledWebinars.length); i++) {
+    const webinar = shuffledWebinars[i];
+    const angle = CONTENT_ANGLES.webinar[i % CONTENT_ANGLES.webinar.length];
+    addTemplate('webinar_invite', webinar, angle, true, webinar.url);
   }
   
-  // 2. Webináře - pokud jsou
-  for (const webinar of sources.webinars) {
-    for (const angle of CONTENT_ANGLES.webinar.slice(0, 2)) {
-      addUnique('webinar_invite', webinar, angle, true, webinar.url);
-    }
-    addUnique('webinar_reminder', webinar, 'fomo', true, webinar.url);
+  // 2. PRODUKTY - Test AI Dovedností, Aimee, AI Edu Stream (25% obsahu)
+  const productSlots = Math.ceil(totalPosts * 0.25);
+  const shuffledProducts = shuffle(sources.products);
+  for (let i = 0; i < Math.min(productSlots, shuffledProducts.length); i++) {
+    const product = shuffledProducts[i];
+    const angle = CONTENT_ANGLES.product[i % CONTENT_ANGLES.product.length];
+    addTemplate('product_benefit', product, angle, true, product.url);
   }
   
-  // 3. Blog články - různé úhly
-  for (const article of sources.articles) {
-    for (const angle of CONTENT_ANGLES.article) {
-      addUnique('blog_insight', article, angle, true, article.url);
-    }
+  // 3. BLOG ČLÁNKY - ale každý článek max 1x (25% obsahu)
+  const articleSlots = Math.ceil(totalPosts * 0.25);
+  const shuffledArticles = shuffle(sources.articles);
+  for (let i = 0; i < Math.min(articleSlots, shuffledArticles.length); i++) {
+    const article = shuffledArticles[i];
+    const angle = CONTENT_ANGLES.article[i % CONTENT_ANGLES.article.length];
+    addTemplate('blog_insight', article, angle, true, article.url);
   }
   
-  // 4. Testimonials - bez linků (autenticita)
-  for (const testimonial of sources.testimonials) {
-    const angle = CONTENT_ANGLES.testimonial[templates.length % CONTENT_ANGLES.testimonial.length];
-    addUnique('testimonial', testimonial, angle, false);
+  // 4. TESTIMONIALS a QUOTES (10% obsahu)
+  const testimonialSlots = Math.ceil(totalPosts * 0.1);
+  const shuffledTestimonials = shuffle(sources.testimonials);
+  for (let i = 0; i < Math.min(testimonialSlots, shuffledTestimonials.length); i++) {
+    const testimonial = shuffledTestimonials[i];
+    const angle = CONTENT_ANGLES.testimonial[i % CONTENT_ANGLES.testimonial.length];
+    addTemplate('testimonial', testimonial, angle, false);
   }
   
-  // 5. Quotes - mix s/bez linků
-  for (const quote of sources.quotes) {
-    const angle = CONTENT_ANGLES.quote[templates.length % CONTENT_ANGLES.quote.length];
-    const includeLink = quote.category === 'benefit'; // Benefity s linkem na web
-    addUnique('brand_mission', quote, angle, includeLink, includeLink ? 'https://aibility.cz' : undefined);
-  }
-  
-  // 6. AI insights a tipy
+  // 5. AI TIPY (10% obsahu)
   const aiTips = [
-    { tip: 'Když používáš ChatGPT, začni "Jednej jako..." a dej AI roli experta.', tool: 'ChatGPT' },
-    { tip: 'V Claude používej XML tagy pro strukturování složitějších promptů.', tool: 'Claude' },
-    { tip: 'Cursor ti ušetří hodiny kódování. Nauč se ho ovládat za jedno odpoledne.', tool: 'Cursor' },
+    { tip: 'Když používáte ChatGPT, začněte "Jednej jako..." a dejte AI roli experta.', tool: 'ChatGPT' },
+    { tip: 'V Claude používejte XML tagy pro strukturování složitějších promptů.', tool: 'Claude' },
+    { tip: 'Cursor vám ušetří hodiny práce. Naučte se ho ovládat za jedno odpoledne.', tool: 'Cursor' },
     { tip: 'Nejlepší prompty obsahují kontext, roli, úkol a formát výstupu.', tool: 'Prompting' },
-    { tip: 'AI není věštec. Dej jí konkrétní data a dostaneš konkrétní odpovědi.', tool: 'General' },
-    { tip: 'Feedback loop: ptej se AI, co by potřebovala vědět, aby ti lépe pomohla.', tool: 'Prompting' },
+    { tip: 'AI není věštec. Dejte jí konkrétní data a dostanete konkrétní odpovědi.', tool: 'General' },
+    { tip: 'Feedback loop: ptejte se AI, co by potřebovala vědět, aby vám lépe pomohla.', tool: 'Prompting' },
   ];
-  
-  for (const tip of aiTips) {
-    addUnique('ai_tip', { id: uuid(), text: tip.tip, source: tip.tool, category: 'tip' } as ScrapedQuote, 'practical', false);
+  const tipSlots = Math.ceil(totalPosts * 0.1);
+  const shuffledTips = shuffle(aiTips);
+  for (let i = 0; i < Math.min(tipSlots, shuffledTips.length); i++) {
+    const tip = shuffledTips[i];
+    addTemplate('ai_tip', { id: uuid(), text: tip.tip, source: tip.tool, category: 'tip' } as ScrapedQuote, 'practical', false);
   }
   
   // Zamíchej a vyber požadovaný počet
@@ -171,15 +179,19 @@ function buildPrompt(template: PostTemplate, platform: Platform): string {
   const maxLength = platform === 'x' ? 270 : 480; // Nechej prostor pro link
   const { type, source, angle, includeLink, linkUrl } = template;
   
-  let prompt = `Vygeneruj ${platform === 'x' ? 'tweet' : 'Threads post'} (max ${maxLength} znaků bez linku) pro Aibility.\n\n`;
+  // KRITICKÉ: Vykání instrukce na začátku
+  let prompt = `⚠️ VYKEJ! Používej "Chcete", "Zajímá vás", "Máte", "vám", "váš".
+ZAKÁZÁNO: "Chceš", "Zajímá tě", "Máš", "ti", "tvůj", "tobě".
+
+Vygeneruj ${platform === 'x' ? 'tweet' : 'Threads post'} (max ${maxLength} znaků bez linku) pro Aibility.\n\n`;
   
   // Přidej CTA info
   if (includeLink && linkUrl) {
     prompt += `NA KONEC PŘIDEJ CTA s odkazem: ${linkUrl}\n`;
-    prompt += `Příklady CTA: "Víc na:", "Zjisti víc:", "Vyzkoušej:", "Přihlas se:", "Link v bio"\n\n`;
+    prompt += `Příklady CTA: "Víc na:", "Zjistěte víc:", "Vyzkoušejte:", "Přihlaste se:"\n\n`;
   }
   
-  prompt += `ÚEL: ${angle.replace(/_/g, ' ')}\n\n`;
+  prompt += `ÚHEL: ${angle.replace(/_/g, ' ')}\n\n`;
   
   switch (type) {
     case 'product_benefit':
