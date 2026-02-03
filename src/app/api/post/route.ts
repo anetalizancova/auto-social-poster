@@ -7,7 +7,7 @@
 
 import { NextResponse } from 'next/server';
 import { publishPost, checkApiStatus } from '@/lib/poster';
-import { getNextPost, updatePostStatus, getQueueStats } from '@/lib/queue';
+import { getNextPost, getFirstPendingPost, updatePostStatus, getQueueStats } from '@/lib/queue';
 
 export async function POST(request: Request) {
   // Ověř CRON_SECRET
@@ -19,10 +19,14 @@ export async function POST(request: Request) {
   }
   
   try {
-    console.log('📤 Looking for post to publish...');
+    // Zkontroluj force parametr (pro manuální publikaci)
+    const { searchParams } = new URL(request.url);
+    const force = searchParams.get('force') === 'true';
+    
+    console.log(`📤 Looking for post to publish... (force: ${force})`);
     
     // Získej další post k publikaci
-    const post = await getNextPost();
+    const post = force ? await getFirstPendingPost() : await getNextPost();
     
     if (!post) {
       return NextResponse.json({

@@ -111,6 +111,20 @@ export async function getNextPost(): Promise<GeneratedPost | null> {
 }
 
 /**
+ * Získej první pending post (nezávisle na čase) - pro manuální publikaci
+ */
+export async function getFirstPendingPost(): Promise<GeneratedPost | null> {
+  const queue = await loadQueue();
+  
+  // Najdi první pending post seřazený podle scheduledFor
+  const pendingPosts = queue.posts
+    .filter(post => post.status === 'pending')
+    .sort((a, b) => new Date(a.scheduledFor).getTime() - new Date(b.scheduledFor).getTime());
+  
+  return pendingPosts[0] || null;
+}
+
+/**
  * Aktualizuj status postu
  */
 export async function updatePostStatus(
