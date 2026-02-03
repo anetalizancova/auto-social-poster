@@ -284,8 +284,9 @@ PRAVIDLA:
 3. Jeden jasný message per post
 4. Emoji max 2, a jen pokud sedí
 5. ${includeLink ? 'NEZAPOMEŇ na CTA s linkem na konci!' : 'Žádný link nepřidávej.'}
-6. VYKEJ! Používej množné číslo: "Chtěli byste", "Zajímá vás", "Věděli jste", "Vyzkoušeli jste"
-7. NIKDY nepiš "Chtěl bys", "Přemýšlel jsi", "Zajímá tě" - to je mužský rod!
+6. KRITICKÉ: VYKEJ! "Chcete", "Zajímá vás", "Máte", "Věděli jste"
+7. ZAKÁZÁNO tykání: "Chceš", "Zajímá tě", "Máš", "ti", "tvůj", "tvoje"
+8. Správně: "vám", "váš", "vás". Špatně: "ti", "tvůj", "tebe".
 
 VRAŤ POUZE TEXT POSTU. Žádné uvozovky, žádné vysvětlení.`;
   

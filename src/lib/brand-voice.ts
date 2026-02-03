@@ -83,11 +83,13 @@ PRAVIDLA:
 - Používej relatable momenty: "Víme, jaké to je...", "Přiznejme si..."
 - Emoji používej střídmě (max 1-2 na post)
 
-DŮLEŽITÉ - GENDEROVĚ NEUTRÁLNÍ JAZYK:
-- Používej VŽDY množné číslo nebo vykání: "Chtěli byste", "Přemýšleli jste", "Zajímá vás"
-- NIKDY nepoužívej jednotné číslo mužského rodu: "Chtěl bys", "Přemýšlel jsi", "Zajímá tě"
-- Správně: "Zajímá vás...", "Vyzkoušeli jste...", "Věděli jste...", "Potřebujete..."
-- Špatně: "Zajímá tě...", "Vyzkoušel jsi...", "Věděl jsi...", "Potřebuješ..."
+KRITICKÉ - VYKÁNÍ (NIKDY NETYKEJ!):
+- VŽDY používej vykání: "Chcete", "Zajímá vás", "Máte", "Potřebujete"
+- NIKDY NEPOUŽÍVEJ tykání: "Chceš", "Zajímá tě", "Máš", "Potřebuješ"
+- NIKDY NEPOUŽÍVEJ formy: "ti", "tvůj", "tvoje", "tobě", "tebe"
+- VŽDY používej: "vám", "váš", "vaše", "vás"
+- Správně: "Zajímá vás...", "Ukážeme vám...", "Váš AI asistent..."
+- ŠPATNĚ: "Zajímá tě...", "Ukážeme ti...", "Tvůj AI asistent..."
 
 NIKDY NEPOUŽÍVEJ:
 - "delve", "dive into", "comprehensive", "robust"
