@@ -212,9 +212,10 @@ function buildPrompt(template: PostTemplate, platform: Platform): string {
   const maxLength = platform === 'x' ? 270 : 480; // Nechej prostor pro link
   const { type, source, angle, includeLink, linkUrl } = template;
   
-  // KRITICKÉ: Vykání instrukce na začátku
-  let prompt = `⚠️ VYKEJ! Používej "Chcete", "Zajímá vás", "Máte", "vám", "váš".
-ZAKÁZÁNO: "Chceš", "Zajímá tě", "Máš", "ti", "tvůj", "tobě".
+  // KRITICKÉ: Genderově neutrální jazyk
+  let prompt = `⚠️ GENDEROVĚ NEUTRÁLNÍ! Tykání OK, ale NIKDY maskulinní minulý čas.
+ZAKÁZÁNO: "Přemýšlel jsi", "Věděl jsi", "Chtěl bys", "Zkoušel jsi", "Narazil jsi"
+MÍSTO TOHO: "Přemýšlíte...", "Věděli jste...", "Zkoušíš...", "Znáte to..."
 
 Vygeneruj ${platform === 'x' ? 'tweet' : 'Threads post'} (max ${maxLength} znaků bez linku) pro Aibility.\n\n`;
   
@@ -329,9 +330,9 @@ PRAVIDLA:
 3. Jeden jasný message per post
 4. Emoji max 2, a jen pokud sedí
 5. ${includeLink ? 'NEZAPOMEŇ na CTA s linkem na konci!' : 'Žádný link nepřidávej.'}
-6. KRITICKÉ: VYKEJ! "Chcete", "Zajímá vás", "Máte", "Věděli jste"
-7. ZAKÁZÁNO tykání: "Chceš", "Zajímá tě", "Máš", "ti", "tvůj", "tvoje"
-8. Správně: "vám", "váš", "vás". Špatně: "ti", "tvůj", "tebe".
+6. Tykání OK, ale NIKDY maskulinní minulý čas!
+7. ZAKÁZÁNO: "Přemýšlel jsi", "Věděl jsi", "Chtěl bys", "Zkoušel jsi"
+8. MÍSTO TOHO: "Přemýšlíš...", "Věděli jste...", "Znáte to...", "Zkoušíte..."
 
 VRAŤ POUZE TEXT POSTU. Žádné uvozovky, žádné vysvětlení.`;
   
@@ -358,94 +359,42 @@ async function generateSinglePost(template: PostTemplate, platform: Platform): P
     
     let content = response.choices[0]?.message?.content?.trim() || '';
     
-    // POST-PROCESSING: Oprav tykání na vykání - rozsáhlý seznam
-    const tykaniFixes: [RegExp, string][] = [
-      // Imperativy (rozkazovací způsob)
-      [/\bChceš\b/gi, 'Chcete'],
-      [/\bMáš\b/gi, 'Máte'],
-      [/\bZkus\b/gi, 'Zkuste'],
-      [/\bZjisti\b/gi, 'Zjistěte'],
-      [/\bPřijď\b/gi, 'Přijďte'],
-      [/\bPřidej se\b/gi, 'Přidejte se'],
-      [/\bPřipoj se\b/gi, 'Připojte se'],
-      [/\bNauč se\b/gi, 'Naučte se'],
-      [/\bPodívej se\b/gi, 'Podívejte se'],
-      [/\bPřihlas se\b/gi, 'Přihlaste se'],
-      [/\bZačni\b/gi, 'Začněte'],
-      [/\bZískej\b/gi, 'Získejte'],
-      [/\bVyzkoušej\b/gi, 'Vyzkoušejte'],
-      [/\bPředstav si\b/gi, 'Představte si'],
-      [/\bZaměř se\b/gi, 'Zaměřte se'],
-      [/\bOtevři\b/gi, 'Otevřete'],
-      [/\bNapiš\b/gi, 'Napište'],
-      [/\bVydej se\b/gi, 'Vydejte se'],
-      [/\bNezmeškej\b/gi, 'Nezmeškejte'],
-      [/\bNenech\b/gi, 'Nenechte'],
-      [/\bNezůstávej\b/gi, 'Nezůstávejte'],
-      [/\bPoznej\b/gi, 'Poznejte'],
-      
-      // Přítomný čas - 2. osoba jednotného čísla
-      [/\bpotřebuješ\b/gi, 'potřebujete'],
-      [/\bpřemýšlíš\b/gi, 'přemýšlíte'],
-      [/\botevíráš\b/gi, 'otevíráte'],
-      [/\bpíšeš\b/gi, 'píšete'],
-      [/\bumíš\b/gi, 'umíte'],
-      [/\bvíš\b/gi, 'víte'],
-      [/\buvidíš\b/gi, 'uvidíte'],
-      [/\bdostaneš\b/gi, 'dostanete'],
-      [/\bdozvíš\b/gi, 'dozvíte'],
-      [/\bnaučíš\b/gi, 'naučíte'],
-      [/\bzískáš\b/gi, 'získáte'],
-      [/\bušetříš\b/gi, 'ušetříte'],
-      [/\bspoléháš\b/gi, 'spoléháte'],
-      [/\btrávíš\b/gi, 'trávíte'],
-      [/\bnejsi\b/gi, 'nejste'],
-      [/\bjsi\b/gi, 'jste'],
-      
-      // Minulý čas
+    // POST-PROCESSING: Oprav pouze MASKULINNÍ minulý čas (tykání je OK)
+    const masculineFixes: [RegExp, string][] = [
+      // Maskulinní minulý čas → neutrální vykání
       [/\bPřemýšlel jsi\b/gi, 'Přemýšleli jste'],
+      [/\bpřemýšlel jsi\b/gi, 'přemýšleli jste'],
       [/\bSlyšel jsi\b/gi, 'Slyšeli jste'],
+      [/\bslyšel jsi\b/gi, 'slyšeli jste'],
       [/\bVěděl jsi\b/gi, 'Věděli jste'],
+      [/\bvěděl jsi\b/gi, 'věděli jste'],
       [/\bNarazil jsi\b/gi, 'Narazili jste'],
+      [/\bnarazil jsi\b/gi, 'narazili jste'],
       [/\bZkusil jsi\b/gi, 'Zkusili jste'],
-      [/\bVybudoval jsi\b/gi, 'Vybudovali jste'],
-      
-      // Přivlastňovací zájmena
-      [/\btvůj\b/gi, 'váš'],
-      [/\btvoje\b/gi, 'vaše'],
-      [/\btvá\b/gi, 'vaše'],
-      [/\btvým\b/gi, 'vaším'],
-      [/\btvé\b/gi, 'vaše'],
-      [/\btvou\b/gi, 'vaši'],
-      
-      // Osobní zájmena - pozor na kontext
-      [/\btě\b/g, 'vás'],
-      [/\btobě\b/g, 'vám'],
-      [/\bTobě\b/g, 'Vám'],
-      
-      // Speciální fráze
-      [/\bZajímá tě\b/gi, 'Zajímá vás'],
-      [/\bFrustruje tě\b/gi, 'Frustruje vás'],
-      [/\bFrustrují tě\b/gi, 'Frustrují vás'],
-      [/\btě to\b/g, 'vás to'],
-      [/\bti to\b/g, 'vám to'],
-      [/\bti pomůže\b/g, 'vám pomůže'],
-      [/\bti pomůžou\b/g, 'vám pomůžou'],
-      [/\bti ukáže\b/g, 'vám ukáže'],
-      [/\bti dají\b/g, 'vám dají'],
-      [/\bti dá\b/g, 'vám dá'],
-      [/\bti otevře\b/g, 'vám otevře'],
-      [/\bpro tebe\b/gi, 'pro vás'],
-      [/\bu tebe\b/gi, 'u vás'],
+      [/\bzkusil jsi\b/gi, 'zkusili jste'],
+      [/\bZkoušel jsi\b/gi, 'Zkoušeli jste'],
+      [/\bzkoušel jsi\b/gi, 'zkoušeli jste'],
+      [/\bViděl jsi\b/gi, 'Viděli jste'],
+      [/\bviděl jsi\b/gi, 'viděli jste'],
+      [/\bChtěl jsi\b/gi, 'Chtěli jste'],
+      [/\bchtěl jsi\b/gi, 'chtěli jste'],
+      [/\bChtěl bys\b/gi, 'Chtěli byste'],
+      [/\bchtěl bys\b/gi, 'chtěli byste'],
+      [/\bMohl bys\b/gi, 'Mohli byste'],
+      [/\bmohl bys\b/gi, 'mohli byste'],
+      [/\bMěl jsi\b/gi, 'Měli jste'],
+      [/\bměl jsi\b/gi, 'měli jste'],
+      [/\bByl jsi\b/gi, 'Byli jste'],
+      [/\bbyl jsi\b/gi, 'byli jste'],
+      [/\bDostal jsi\b/gi, 'Dostali jste'],
+      [/\bdostal jsi\b/gi, 'dostali jste'],
+      [/\bSetkal jsi se\b/gi, 'Setkali jste se'],
+      [/\bsetkal jsi se\b/gi, 'setkali jste se'],
     ];
     
-    for (const [pattern, replacement] of tykaniFixes) {
+    for (const [pattern, replacement] of masculineFixes) {
       content = content.replace(pattern, replacement);
     }
-    
-    // Speciální opravy - "ti" je problematické (tipy, strategie, atd.)
-    // Nahraď jen "ti " následované malým písmenem (slovesem)
-    content = content.replace(/\bti ([a-z])/g, 'vám $1');
     
     // Ořízni pokud je moc dlouhé
     if (content.length > maxLength) {
