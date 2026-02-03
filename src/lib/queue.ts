@@ -156,6 +156,7 @@ export async function updatePostStatus(
 export async function getQueueStats(): Promise<{
   total: number;
   pending: number;
+  scheduled: number;
   posted: number;
   failed: number;
   nextPost: GeneratedPost | null;
@@ -180,10 +181,15 @@ export async function getQueueStats(): Promise<{
     return postDate >= tomorrow && postDate < dayAfter;
   });
   
-  const nextPost = queue.posts.find(p => p.status === 'pending') || null;
+  // Příští post = první pending nebo scheduled, seřazené podle času
+  const upcomingPosts = queue.posts
+    .filter(p => p.status === 'pending' || p.status === 'scheduled')
+    .sort((a, b) => new Date(a.scheduledFor).getTime() - new Date(b.scheduledFor).getTime());
+  const nextPost = upcomingPosts[0] || null;
   
   return {
     total: queue.posts.length,
+    scheduled: queue.posts.filter(p => p.status === 'scheduled').length,
     pending: queue.posts.filter(p => p.status === 'pending').length,
     posted: queue.posts.filter(p => p.status === 'posted').length,
     failed: queue.posts.filter(p => p.status === 'failed').length,

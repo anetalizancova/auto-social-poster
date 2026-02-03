@@ -11,7 +11,7 @@ interface Post {
   content_threads: string;
   platform: 'x' | 'threads';
   scheduledFor: string;
-  status: 'pending' | 'posted' | 'failed';
+  status: 'pending' | 'scheduled' | 'posted' | 'failed';
   sourceUrl?: string;   // Link v postu (CTA)
   postUrl?: string;     // URL publikovaného postu
   error?: string;
@@ -21,6 +21,7 @@ interface Post {
 interface QueueStats {
   total: number;
   pending: number;
+  scheduled: number;
   posted: number;
   failed: number;
   nextPost: Post | null;
@@ -57,6 +58,7 @@ const TYPE_LABELS: Record<string, string> = {
 
 const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
+  scheduled: 'bg-blue-100 text-blue-800',
   posted: 'bg-green-100 text-green-800',
   failed: 'bg-red-100 text-red-800',
 };
@@ -222,10 +224,14 @@ export default function Dashboard() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-5 gap-4 mb-8">
           <div className="bg-white rounded-lg p-4 shadow-sm">
-            <div className="text-3xl font-bold text-gray-900">{queue?.stats.pending || 0}</div>
-            <div className="text-sm text-gray-500">Ve frontě</div>
+            <div className="text-3xl font-bold text-yellow-600">{queue?.stats.pending || 0}</div>
+            <div className="text-sm text-gray-500">Čekající</div>
+          </div>
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <div className="text-3xl font-bold text-blue-600">{queue?.stats.scheduled || 0}</div>
+            <div className="text-sm text-gray-500">Naplánováno</div>
           </div>
           <div className="bg-white rounded-lg p-4 shadow-sm">
             <div className="text-3xl font-bold text-green-600">{queue?.stats.posted || 0}</div>
@@ -270,7 +276,7 @@ export default function Dashboard() {
           >
             🔄 Obnovit
           </button>
-          {(queue?.stats.pending || 0) > 0 && (
+          {((queue?.stats.pending || 0) + (queue?.stats.scheduled || 0)) > 0 && (
             <button
               onClick={handleClearQueue}
               className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200"

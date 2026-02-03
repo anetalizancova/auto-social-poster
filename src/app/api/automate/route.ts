@@ -83,7 +83,8 @@ export async function POST(request: Request) {
     const queue = await loadQueue();
     for (const post of posts) {
       const scheduleResultItem = scheduleResult.results.find(r => r.postId === post.id);
-      post.status = scheduleResultItem?.success ? 'posted' : 'failed';
+      // Označit jako 'scheduled' pokud úspěšně naplánováno, jinak 'failed'
+      post.status = scheduleResultItem?.success ? 'scheduled' : 'failed';
     }
     queue.posts.push(...posts);
     queue.lastGenerated = new Date().toISOString();
