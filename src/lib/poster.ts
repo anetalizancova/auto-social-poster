@@ -14,12 +14,15 @@ interface UploadResult {
   success: boolean;
   postUrl?: string;
   error?: string;
+  scheduled?: boolean;
 }
 
 /**
- * Publikuj post na platformu
+ * Publikuj nebo naplánuj post na platformu
+ * @param post - post k publikaci
+ * @param scheduleForLater - true = naplánovat na scheduledFor čas, false = publikovat hned
  */
-export async function publishPost(post: GeneratedPost): Promise<UploadResult> {
+export async function publishPost(post: GeneratedPost, scheduleForLater: boolean = false): Promise<UploadResult> {
   const content = post.platform === 'x' ? post.content_x : post.content_threads;
   
   if (!API_KEY) {
@@ -36,6 +39,14 @@ export async function publishPost(post: GeneratedPost): Promise<UploadResult> {
     formData.append('user', USER);
     formData.append('platform[]', post.platform);
     formData.append('title', content);
+    
+    // Pokud chceme naplánovat na později
+    if (scheduleForLater && post.scheduledFor) {
+      const scheduledDate = new Date(post.scheduledFor);
+      // Upload Post API očekává ISO string nebo Unix timestamp
+      formData.append('schedule', scheduledDate.toISOString());
+      console.log(`📅 Scheduling for: ${scheduledDate.toISOString()}`);
+    }
     
     const response = await fetch(`${API_URL}/upload_text`, {
       method: 'POST',
@@ -55,6 +66,7 @@ export async function publishPost(post: GeneratedPost): Promise<UploadResult> {
         return {
           success: true,
           postUrl: platformResult.url,
+          scheduled: scheduleForLater,
         };
       }
       
@@ -132,6 +144,46 @@ export async function publishToBothPlatforms(post: GeneratedPost): Promise<{
     };
     return { x: errorResult, threads: errorResult };
   }
+}
+
+/**
+ * Naplánuj všechny pending posty přes Upload Post API
+ */
+export async function scheduleAllPosts(posts: GeneratedPost[]): Promise<{
+  scheduled: number;
+  failed: number;
+  results: { postId: string; success: boolean; error?: string }[];
+}> {
+  const results: { postId: string; success: boolean; error?: string }[] = [];
+  let scheduled = 0;
+  let failed = 0;
+  
+  for (const post of posts) {
+    try {
+      const result = await publishPost(post, true); // true = schedule for later
+      
+      if (result.success) {
+        scheduled++;
+        results.push({ postId: post.id, success: true });
+      } else {
+        failed++;
+        results.push({ postId: post.id, success: false, error: result.error });
+      }
+      
+      // Malá pauza mezi requesty
+      await new Promise(r => setTimeout(r, 500));
+      
+    } catch (error) {
+      failed++;
+      results.push({ 
+        postId: post.id, 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  }
+  
+  return { scheduled, failed, results };
 }
 
 /**
