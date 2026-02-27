@@ -1,16 +1,15 @@
 /**
  * API Route: Generate posts
  * 
- * POST /api/generate - Vygeneruj posty do fronty
+ * POST /api/generate - Vygeneruj posty do fronty (s deduplication)
  */
 
 import { NextResponse } from 'next/server';
 import { generatePosts } from '@/lib/generator';
-import { loadSources, addToQueue, loadQueue } from '@/lib/queue';
+import { loadSources, addToQueue, loadQueue, getRecentPosts } from '@/lib/queue';
 
 export async function POST(request: Request) {
   try {
-    // Volitelně načti config z query params nebo body
     const { searchParams } = new URL(request.url);
     const count = parseInt(searchParams.get('count') || '14');
     
@@ -36,7 +35,6 @@ export async function POST(request: Request) {
       sources.webinars.length + 
       sources.products.length + 
       (sources.articles?.length || 0) + 
-      (sources.testimonials?.length || 0) +
       sources.quotes.length;
     
     if (totalSources === 0) {
@@ -46,7 +44,11 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
     
-    // Najdi poslední naplánované datum v queue a navázej
+    // Načti nedávné posty pro deduplication
+    const recentPosts = await getRecentPosts(14);
+    console.log(`📊 Recent posts for dedup: ${recentPosts.length}`);
+    
+    // Najdi poslední naplánované datum a navázej
     const queue = await loadQueue();
     const pendingPosts = queue.posts.filter(p => p.status === 'pending');
     
@@ -55,7 +57,6 @@ export async function POST(request: Request) {
         .map(p => new Date(p.scheduledFor))
         .sort((a, b) => b.getTime() - a.getTime())[0];
       
-      // Začni od dalšího dne po posledním naplánovaném
       const nextDay = new Date(lastScheduled);
       nextDay.setDate(nextDay.getDate() + 1);
       nextDay.setHours(0, 0, 0, 0);
@@ -64,8 +65,8 @@ export async function POST(request: Request) {
       console.log(`📅 Continuing from: ${nextDay.toISOString()}`);
     }
     
-    // Generuj posty
-    const posts = await generatePosts(sources, config);
+    // Generuj posty s deduplication
+    const posts = await generatePosts(sources, config, recentPosts);
     
     // Přidej do fronty
     const updatedQueue = await addToQueue(posts);
@@ -90,7 +91,6 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
-  // GET vrátí stav fronty
   try {
     const queue = await loadQueue();
     const sources = await loadSources();
@@ -107,7 +107,6 @@ export async function GET() {
         webinars: sources.webinars.length,
         products: sources.products.length,
         articles: sources.articles?.length || 0,
-        testimonials: sources.testimonials?.length || 0,
         quotes: sources.quotes.length,
         scrapedAt: sources.scrapedAt,
       },

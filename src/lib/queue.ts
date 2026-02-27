@@ -1,22 +1,30 @@
 /**
- * Queue Management with Redis Storage
+ * Queue Management with Redis Storage v3
  * 
- * Správa fronty postů s persistentním Redis storage
+ * Správa fronty postů s persistentním Redis storage.
+ * Nově: updatePost pro inline editing, getRecentPosts pro deduplication.
  */
 
 import { createClient, RedisClientType } from 'redis';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { join } from 'path';
 import type { PostsQueue, GeneratedPost, ContentSources } from './types';
 
 // Redis keys
 const QUEUE_KEY = 'auto-poster:queue';
 const SOURCES_KEY = 'auto-poster:sources';
 
+// JSON file fallback paths (for local dev without Redis)
+const DATA_DIR = join(process.cwd(), 'src', 'data');
+const QUEUE_FILE = join(DATA_DIR, 'posts-queue.json');
+const SOURCES_FILE = join(DATA_DIR, 'content-sources.json');
+
+// Check if Redis is available
+const USE_REDIS = !!process.env.REDIS_URL;
+
 // Singleton Redis client
 let redis: RedisClientType | null = null;
 
-/**
- * Get Redis client (singleton pattern)
- */
 async function getRedis(): Promise<RedisClientType> {
   if (redis && redis.isOpen) {
     return redis;
@@ -38,33 +46,60 @@ async function getRedis(): Promise<RedisClientType> {
   return redis;
 }
 
+// JSON file helpers for local dev
+function readJsonFile<T>(filePath: string, defaultVal: T): T {
+  try {
+    if (existsSync(filePath)) {
+      const data = readFileSync(filePath, 'utf-8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error(`Error reading ${filePath}:`, error);
+  }
+  return defaultVal;
+}
+
+function writeJsonFile<T>(filePath: string, data: T): void {
+  try {
+    if (!existsSync(DATA_DIR)) {
+      mkdirSync(DATA_DIR, { recursive: true });
+    }
+    writeFileSync(filePath, JSON.stringify(data, null, 2));
+  } catch (error) {
+    console.error(`Error writing ${filePath}:`, error);
+  }
+}
+
 /**
- * Načti frontu postů z Redis
+ * Načti frontu postů (Redis nebo JSON file)
  */
 export async function loadQueue(): Promise<PostsQueue> {
+  const defaultQueue: PostsQueue = { posts: [], lastGenerated: '', lastPosted: '' };
+  
+  if (!USE_REDIS) {
+    return readJsonFile(QUEUE_FILE, defaultQueue);
+  }
+  
   try {
     const client = await getRedis();
     const data = await client.get(QUEUE_KEY);
-    
-    if (data) {
-      return JSON.parse(data);
-    }
+    if (data) return JSON.parse(data);
   } catch (error) {
     console.error('Error loading queue from Redis:', error);
   }
   
-  // Vrať prázdnou frontu jako fallback
-  return {
-    posts: [],
-    lastGenerated: '',
-    lastPosted: '',
-  };
+  return defaultQueue;
 }
 
 /**
- * Ulož frontu postů do Redis
+ * Ulož frontu postů (Redis nebo JSON file)
  */
 export async function saveQueue(queue: PostsQueue): Promise<void> {
+  if (!USE_REDIS) {
+    writeJsonFile(QUEUE_FILE, queue);
+    return;
+  }
+  
   try {
     const client = await getRedis();
     await client.set(QUEUE_KEY, JSON.stringify(queue));
@@ -80,7 +115,6 @@ export async function saveQueue(queue: PostsQueue): Promise<void> {
 export async function addToQueue(posts: GeneratedPost[]): Promise<PostsQueue> {
   const queue = await loadQueue();
   
-  // Přidej nové posty
   queue.posts.push(...posts);
   
   // Seřaď podle scheduled time
@@ -95,33 +129,44 @@ export async function addToQueue(posts: GeneratedPost[]): Promise<PostsQueue> {
 }
 
 /**
- * Získej další post k publikaci
+ * Získej nedávné posty pro deduplication (posledních N dní)
  */
-export async function getNextPost(): Promise<GeneratedPost | null> {
+export async function getRecentPosts(days: number = 14): Promise<GeneratedPost[]> {
   const queue = await loadQueue();
-  const now = new Date();
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
   
-  // Najdi první pending post, jehož čas už nastal
-  const readyPost = queue.posts.find(post => 
-    post.status === 'pending' && 
-    new Date(post.scheduledFor) <= now
+  return queue.posts.filter(post => 
+    new Date(post.createdAt) > cutoff
   );
-  
-  return readyPost || null;
 }
 
 /**
- * Získej první pending post (nezávisle na čase) - pro manuální publikaci
+ * Aktualizuj post (pro inline editing v dashboardu)
  */
-export async function getFirstPendingPost(): Promise<GeneratedPost | null> {
+export async function updatePost(
+  postId: string,
+  updates: Partial<Pick<GeneratedPost, 'content_x' | 'content_threads' | 'status' | 'edited' | 'postedAt' | 'postUrl' | 'error'>>
+): Promise<GeneratedPost | null> {
   const queue = await loadQueue();
   
-  // Najdi první pending post seřazený podle scheduledFor
-  const pendingPosts = queue.posts
-    .filter(post => post.status === 'pending')
-    .sort((a, b) => new Date(a.scheduledFor).getTime() - new Date(b.scheduledFor).getTime());
+  const postIndex = queue.posts.findIndex(p => p.id === postId);
+  if (postIndex === -1) return null;
   
-  return pendingPosts[0] || null;
+  const post = queue.posts[postIndex];
+  
+  // Editovat content lze u všech kromě posted (pending, scheduled, failed)
+  if ((updates.content_x || updates.content_threads) && post.status === 'posted') {
+    return null;
+  }
+  
+  queue.posts[postIndex] = {
+    ...post,
+    ...updates,
+  };
+  
+  await saveQueue(queue);
+  return queue.posts[postIndex];
 }
 
 /**
@@ -148,6 +193,34 @@ export async function updatePostStatus(
   }
   
   await saveQueue(queue);
+}
+
+/**
+ * Získej další post k publikaci
+ */
+export async function getNextPost(): Promise<GeneratedPost | null> {
+  const queue = await loadQueue();
+  const now = new Date();
+  
+  const readyPost = queue.posts.find(post => 
+    post.status === 'pending' && 
+    new Date(post.scheduledFor) <= now
+  );
+  
+  return readyPost || null;
+}
+
+/**
+ * Získej první pending post (pro manuální publikaci)
+ */
+export async function getFirstPendingPost(): Promise<GeneratedPost | null> {
+  const queue = await loadQueue();
+  
+  const pendingPosts = queue.posts
+    .filter(post => post.status === 'pending')
+    .sort((a, b) => new Date(a.scheduledFor).getTime() - new Date(b.scheduledFor).getTime());
+  
+  return pendingPosts[0] || null;
 }
 
 /**
@@ -181,7 +254,6 @@ export async function getQueueStats(): Promise<{
     return postDate >= tomorrow && postDate < dayAfter;
   });
   
-  // Příští post = první pending nebo scheduled, seřazené podle času
   const upcomingPosts = queue.posts
     .filter(p => p.status === 'pending' || p.status === 'scheduled')
     .sort((a, b) => new Date(a.scheduledFor).getTime() - new Date(b.scheduledFor).getTime());
@@ -224,34 +296,37 @@ export async function cleanOldPosts(): Promise<number> {
 }
 
 /**
- * Načti content sources z Redis
+ * Načti content sources (Redis nebo JSON file)
  */
 export async function loadSources(): Promise<ContentSources> {
+  const defaultSources: ContentSources = {
+    webinars: [], products: [], articles: [], quotes: [], scrapedAt: '',
+  };
+  
+  if (!USE_REDIS) {
+    return readJsonFile(SOURCES_FILE, defaultSources);
+  }
+  
   try {
     const client = await getRedis();
     const data = await client.get(SOURCES_KEY);
-    
-    if (data) {
-      return JSON.parse(data);
-    }
+    if (data) return JSON.parse(data);
   } catch (error) {
     console.error('Error loading sources from Redis:', error);
   }
   
-  return {
-    webinars: [],
-    products: [],
-    articles: [],
-    testimonials: [],
-    quotes: [],
-    scrapedAt: '',
-  };
+  return defaultSources;
 }
 
 /**
- * Ulož content sources do Redis
+ * Ulož content sources (Redis nebo JSON file)
  */
 export async function saveSources(sources: ContentSources): Promise<void> {
+  if (!USE_REDIS) {
+    writeJsonFile(SOURCES_FILE, sources);
+    return;
+  }
+  
   try {
     const client = await getRedis();
     await client.set(SOURCES_KEY, JSON.stringify(sources));

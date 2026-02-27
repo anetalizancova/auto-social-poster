@@ -1,24 +1,28 @@
 /**
  * API Route: Full Automation
  * 
- * POST /api/automate - Kompletní automatizace: scrape → generate → schedule
+ * GET/POST /api/automate - Kompletní automatizace: scrape → generate → schedule
  * 
- * Toto je hlavní cron endpoint, který se spouští 1× týdně:
- * 1. Scrape webu (webináře, produkty, články)
- * 2. Generování postů na příští týden
- * 3. Naplánování všech postů přes Upload Post API
+ * Cron endpoint (1× týdně, Monday 6 AM):
+ * 1. Duplicate guard -- skip if already ran in last 12h
+ * 2. Scrape webu (webináře, produkty, články s plným textem)
+ * 3. Generování postů s deduplication
+ * 4. Naplánování přes Upload Post API
  */
 
 import { NextResponse } from 'next/server';
 import { scrapeAll } from '@/lib/scraper';
 import { generatePosts } from '@/lib/generator';
 import { scheduleAllPosts } from '@/lib/poster';
-import { saveSources, loadQueue, saveQueue } from '@/lib/queue';
+import { saveSources, loadQueue, saveQueue, getRecentPosts } from '@/lib/queue';
 
-export const maxDuration = 300; // 5 minut pro celou automatizaci
+export const maxDuration = 300; // 5 minut
 
-export async function POST(request: Request) {
-  // Ověř CRON_SECRET
+// Minimum hours between automation runs (prevents duplicate scheduling)
+const MIN_HOURS_BETWEEN_RUNS = 12;
+
+// Shared automation logic -- used by both GET (Vercel cron) and POST (manual trigger)
+async function runAutomation(request: Request) {
   const authHeader = request.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
   
@@ -26,9 +30,9 @@ export async function POST(request: Request) {
     console.log('Warning: Missing or invalid CRON_SECRET');
   }
   
-  // Volitelný count parametr pro testování (default 14)
   const { searchParams } = new URL(request.url);
   const count = parseInt(searchParams.get('count') || '14');
+  const force = searchParams.get('force') === 'true'; // ?force=true skips guard
   const postsPerDay = Math.min(count, 2);
   const daysAhead = Math.ceil(count / postsPerDay);
   
@@ -38,10 +42,66 @@ export async function POST(request: Request) {
     generate?: { posts: number };
     schedule?: { scheduled: number; failed: number };
     error?: string;
+    skipped?: boolean;
   } = {};
   
   try {
-    console.log(`🚀 Starting automation (count=${count})...`);
+    // ========== DUPLICATE GUARD ==========
+    // Check if automation already ran recently
+    if (!force) {
+      const queue = await loadQueue();
+      
+      if (queue.lastGenerated) {
+        const lastRun = new Date(queue.lastGenerated);
+        const hoursSinceLastRun = (Date.now() - lastRun.getTime()) / (1000 * 60 * 60);
+        
+        if (hoursSinceLastRun < MIN_HOURS_BETWEEN_RUNS) {
+          console.log(`⏭️ Skipping automation -- last run was ${hoursSinceLastRun.toFixed(1)}h ago (min ${MIN_HOURS_BETWEEN_RUNS}h). Use ?force=true to override.`);
+          return NextResponse.json({
+            success: true,
+            message: `Skipped -- automation already ran ${hoursSinceLastRun.toFixed(1)}h ago`,
+            lastGenerated: queue.lastGenerated,
+            hoursSinceLastRun: Math.round(hoursSinceLastRun * 10) / 10,
+            minHours: MIN_HOURS_BETWEEN_RUNS,
+            hint: 'Use ?force=true to override this check',
+            results: { skipped: true },
+          });
+        }
+      }
+      
+      // Also check if there are already pending/scheduled posts for the future
+      const now = new Date();
+      const futurePosts = queue.posts.filter(p => 
+        (p.status === 'pending' || p.status === 'scheduled') &&
+        new Date(p.scheduledFor) > now
+      );
+      if (futurePosts.length >= count) {
+        console.log(`⏭️ Skipping -- already ${futurePosts.length} future pending/scheduled posts in queue (requested ${count}). Use ?force=true to override.`);
+        return NextResponse.json({
+          success: true,
+          message: `Skipped -- already ${futurePosts.length} future pending/scheduled posts in queue`,
+          futurePosts: futurePosts.length,
+          hint: 'Use ?force=true to override this check',
+          results: { skipped: true },
+        });
+      }
+
+      // Auto-transition: mark past "scheduled" posts as "posted"
+      let transitioned = 0;
+      for (const post of queue.posts) {
+        if (post.status === 'scheduled' && new Date(post.scheduledFor) < now) {
+          post.status = 'posted';
+          post.postedAt = post.scheduledFor;
+          transitioned++;
+        }
+      }
+      if (transitioned > 0) {
+        await saveQueue(queue);
+        console.log(`🔄 Auto-transitioned ${transitioned} past scheduled posts to posted`);
+      }
+    }
+    
+    console.log(`🚀 Starting automation (count=${count}, force=${force})...`);
     
     // 1. SCRAPE
     console.log('📥 Step 1: Scraping website...');
@@ -55,13 +115,15 @@ export async function POST(request: Request) {
     };
     console.log(`✅ Scraped: ${sources.webinars.length} webinars, ${sources.products.length} products, ${sources.articles?.length || 0} articles`);
     
-    // 2. GENERATE
+    // 2. GENERATE (s deduplication)
     console.log(`🤖 Step 2: Generating ${count} posts...`);
+    const recentPosts = await getRecentPosts(14);
+    
     const posts = await generatePosts(sources, { 
       totalPosts: count,
-      daysAhead: daysAhead,
-      postsPerDay: postsPerDay,
-    });
+      daysAhead,
+      postsPerDay,
+    }, recentPosts);
     
     results.generate = { posts: posts.length };
     console.log(`✅ Generated ${posts.length} posts`);
@@ -75,7 +137,7 @@ export async function POST(request: Request) {
       });
     }
     
-    // 3. SCHEDULE - naplánuj všechny přes Upload Post API
+    // 3. SCHEDULE přes Upload Post API
     console.log('📅 Step 3: Scheduling posts via Upload Post...');
     const scheduleResult = await scheduleAllPosts(posts);
     
@@ -85,11 +147,10 @@ export async function POST(request: Request) {
     };
     console.log(`✅ Scheduled ${scheduleResult.scheduled} posts, ${scheduleResult.failed} failed`);
     
-    // 4. Ulož posty do queue (pro přehled v dashboardu)
+    // 4. Ulož do queue
     const queue = await loadQueue();
     for (const post of posts) {
       const scheduleResultItem = scheduleResult.results.find(r => r.postId === post.id);
-      // Označit jako 'scheduled' pokud úspěšně naplánováno, jinak 'failed'
       post.status = scheduleResultItem?.success ? 'scheduled' : 'failed';
       if (scheduleResultItem?.error) {
         post.error = scheduleResultItem.error;
@@ -120,11 +181,12 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
-  return NextResponse.json({
-    info: 'Full automation endpoint',
-    description: 'Scrape → Generate → Schedule all posts',
-    usage: 'POST /api/automate',
-    schedule: 'Runs weekly via Vercel Cron',
-  });
+// GET -- Vercel cron calls this every Monday at 6:00 AM
+export async function GET(request: Request) {
+  return runAutomation(request);
+}
+
+// POST -- manual trigger from dashboard or curl
+export async function POST(request: Request) {
+  return runAutomation(request);
 }

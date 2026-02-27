@@ -1,106 +1,571 @@
 {
-  "webinars": [],
+  "webinars": [
+    {
+      "id": "94c9200a-3f82-4a09-b001-4b028752f983",
+      "title": "Midjourney Masterclass: Tvořte vizuály jako profík",
+      "description": "Naučte se, jak z Midjourney dostat vizuály, které drží styl, sedí na brand a dají se zopakovat.",
+      "date": "2026-02-11T11:00:00+01:00",
+      "time": "11:00",
+      "duration": "180 minut",
+      "url": "https://aibility.cz/webinare/midjourney-masterclass-tvorte-vizualy-jako-profik",
+      "price": "1 490 Kč",
+      "type": "live"
+    },
+    {
+      "id": "fdd0af96-e418-4b75-9658-26bc8b38d461",
+      "title": "Klíč k adopci AI: Revoluční metodika Superpowered Professional",
+      "description": "AI adopci nerozjedou nástroje. Rozjedou ji lidé se správným mindsetem. Najděte ty své.",
+      "date": "2026-02-19T10:00:00+01:00",
+      "time": "10:00",
+      "duration": "60 minut",
+      "url": "https://aibility.cz/webinare/klic-k-adopci-ai-revolucni-metodika-superpowered-professional",
+      "price": "Zdarma",
+      "type": "live"
+    },
+    {
+      "id": "89f4fde2-66ab-4461-a333-f915e3e5186d",
+      "title": "Cursor od základů: 90 minut, které změní způsob, jak pracujete",
+      "description": "Cursor je nástroj, který dává znalostním pracovníkům superschopnosti. Naučte se ho využívat naplno.",
+      "date": "2026-02-24T10:00:00+01:00",
+      "time": "10:00",
+      "duration": "90 minut",
+      "url": "https://aibility.cz/webinare/cursor-od-zakladu-90-minut-ktere-zmeni-zpusob-jak-pracujete",
+      "price": "990 Kč",
+      "type": "live"
+    },
+    {
+      "id": "8ac596b5-ef84-416b-9487-0c0b2a8a9868",
+      "title": "Vibe coding v praxi: Od prototypu k živé appce",
+      "description": "Naučíme vás workflow, se kterým z každého nápadu uděláte funkční appku s odkazem, který můžete poslat dál.",
+      "date": "2026-03-10T10:00:00+01:00",
+      "time": "10:00",
+      "duration": "90 minut",
+      "url": "https://aibility.cz/webinare/vibe-coding-v-praxi-od-prototypu-k-zive-appce",
+      "price": "1 490 Kč",
+      "type": "live"
+    },
+    {
+      "id": "06a476b0-e376-4b86-abf2-74a97599d935",
+      "title": "AI agent, který sbírá data za vás: Cursor + Apify v praxi",
+      "description": "Ruční sběr dat je brzda. Ukážeme vám workflow, se kterým váš AI agent projde weby, posbírá data a připraví výstup.",
+      "date": "2026-03-24T11:00:00+01:00",
+      "time": "11:00",
+      "duration": "90 minut",
+      "url": "https://aibility.cz/webinare/ai-agent-ktery-sbira-data-za-vas-cursor-apify-v-praxi",
+      "price": "1 490 Kč",
+      "type": "live"
+    },
+    {
+      "id": "e9b0f076-921f-45a1-baa2-20e18fea6b77",
+      "title": "Intro do Claude Code",
+      "description": "Claude Code je jeden z nejsilnějších AI nástrojů současnosti. Zjistěte, jak funguje a jak ho začít používat.",
+      "date": "2026-04-02T10:00:00+02:00",
+      "time": "10:00",
+      "duration": "90 minut",
+      "url": "https://aibility.cz/webinare/intro-do-claude-code",
+      "price": "990 Kč",
+      "type": "live"
+    }
+  ],
   "products": [
     {
-      "id": "86737a4a-a704-4389-9e99-55961f96c256",
-      "name": "Patříte mezi TOP 3 %?",
-      "tagline": "Patříte mezi TOP 3 %?",
-      "description": "Personalizovaný test vašich AI dovedností za 15 minut. Zjistíte svůj AI typ, silné stránky i mezery. K testu dostanete 30 dní přístup k AI kouči Aimee.",
-      "price": "",
-      "url": "https://aibility.cz/aidovednosti",
-      "features": [],
-      "cta": "Jak dlouho test trvá?"
-    },
-    {
-      "id": "e8ed1198-7252-4df7-870d-03ae7904d2ba",
+      "id": "d90c3939-88d6-4703-929f-398fdd2d1c30",
       "name": "Aimee",
-      "tagline": "Jste jednu konverzaci od prvního WOW momentu",
-      "description": "Naučte se přemýšlet a pracovat s AI v krátkých konverzacích, které zvládnete mezi meetingy.",
-      "price": "",
+      "tagline": "Jste jednu konverzaci od prvního WOW momentu",
+      "description": "AI coaching app, která vás provede světem AI. 24/7 podpora, personalizované učení, více než 30 připravených skills. Aimee se přizpůsobí vašim potřebám a provede vás od nuly k reálným výsledkům.",
+      "price": "Prémiové",
       "url": "https://aibility.cz/aimee",
-      "features": [],
-      "cta": "Načíst další"
+      "features": [
+        "24/7 AI partner pro učení",
+        "Personalizované na vaše potřeby",
+        "Více než 30 připravených skills",
+        "Měřitelná změna mindset",
+        "Reálné příklady z Aibility praxe"
+      ],
+      "cta": "Vyzkoušet Aimee",
+      "testimonials": [
+        {
+          "text": "Díky Aimee jsem za týden pochopila víc než za měsíce googlování.",
+          "role": "Marketingová specialistka",
+          "context": "Aimee"
+        },
+        {
+          "text": "Myslela jsem, že AI není pro mě. Teď ji používám každý den.",
+          "role": "Account manager",
+          "context": "Aimee"
+        },
+        {
+          "text": "Za pár dní jsem napsal 15 skriptů. Předtím jsem neuměl programovat.",
+          "role": "Business konzultant",
+          "context": "Aimee"
+        }
+      ]
     },
     {
-      "id": "067a3afe-8b30-40cb-bb72-ce5ec3a6b267",
+      "id": "797d1b66-a1da-4b23-a10d-c6c0af32a20d",
+      "name": "Test AI Dovedností",
+      "tagline": "Patříte mezi TOP 3%?",
+      "description": "15minutový test, který zjistí váš AI profil. Konverzační formát s Aimee, ne zaškrtávačky. Dostanete personalizovaný report s vaším AI typem, skóre v 5 oblastech a 3 prioritní kroky.",
+      "price": "Prémiové",
+      "url": "https://aibility.cz/aidovednosti",
+      "features": [
+        "15 minut, konverzační formát",
+        "5 AI profesních typů (Architekt, Tinkerer, Vizionář, Generalista, Průzkumník)",
+        "Personalizovaný report se skóre",
+        "3 prioritní kroky co dělat dál",
+        "30 dní přístupu k Aimee v ceně"
+      ],
+      "cta": "Spustit test",
+      "testimonials": [
+        {
+          "text": "Test mi ukázal, kde mám mezery. Teď vím, na čem pracovat.",
+          "role": "HR manažer",
+          "context": "AI test"
+        },
+        {
+          "text": "Konečně jsem pochopil, kde jsem oproti ostatním. Překvapivý výsledek.",
+          "role": "Product manager",
+          "context": "AI test"
+        }
+      ]
+    },
+    {
+      "id": "7cb8405a-1e63-4dbb-8851-105a79e9a873",
       "name": "AI Edu Stream",
-      "tagline": "Zařaďte se mezi lidi se superschopnostmi",
-      "description": "Prémiové webináře, kompletní archiv a komunita nadšenců. Držte krok s AI světem — bez stresu.",
-      "price": "",
+      "tagline": "Non-stop AI inspirace",
+      "description": "Přístup ke všem live webinářům, kompletní archiv záznamů, exkluzivní Circle komunita a přímý kontakt s experty. 2-3 prémiové webináře měsíčně.",
+      "price": "Prémiové",
       "url": "https://aibility.cz/ai-edu-stream",
-      "features": [],
-      "cta": "Stát se členem"
+      "features": [
+        "2-3 prémiové webináře měsíčně",
+        "Kompletní archiv všech záznamů",
+        "Exkluzivní Circle komunita",
+        "Přímý kontakt s AI experty",
+        "Pozvánky na exkluzivní offline akce"
+      ],
+      "cta": "Získat přístup",
+      "testimonials": [
+        {
+          "text": "AI Edu Stream je nejlepší investice do vzdělání, kterou jsem udělala.",
+          "role": "Freelancerka",
+          "context": "AI Edu Stream"
+        },
+        {
+          "text": "Webináře jsou naprosto praktické. Hned druhý den jsem použila to, co jsem se naučila.",
+          "role": "Projektová manažerka",
+          "context": "AI Edu Stream"
+        },
+        {
+          "text": "Konečně někdo, kdo učí AI srozumitelně a bez buzzwords.",
+          "role": "Podnikatel",
+          "context": "AI Edu Stream"
+        }
+      ]
     },
     {
-      "id": "5e88de5a-2d86-4d19-aa46-2e0bd739aeb4",
+      "id": "9c7ad577-6f78-4ac5-8623-2f3640ec5e4a",
       "name": "Cursor Masterclass",
-      "tagline": "Naučte se Cursor za jeden den",
+      "tagline": "90 minut, které změní způsob, jak pracujete",
       "description": "Cursor je AI agent, který pracuje hodiny bez vašeho dohledu. Workshop pro začátečníky i nevývojáře—postavíte reálný projekt a odejdete s workflow, které můžete použít hned. Praha, 9990 Kč.",
-      "price": "",
+      "price": "Prémiové",
       "url": "https://aibility.cz/cursor",
-      "features": [],
-      "cta": "Je tento kurz na Cursor vhodný pro začátečníky?"
+      "features": [
+        "Od nuly k produktivnímu workflow",
+        "Praktické ukázky na reálných příkladech",
+        "Automatizace opakujících se úkolů",
+        "Tipy od lidí, kteří Cursor používají denně"
+      ],
+      "cta": "Zjistit více",
+      "testimonials": [
+        {
+          "text": "Za hodinu práce s Cursorem udělám to, co mi dřív trvalo celý den.",
+          "role": "Developer",
+          "context": "Cursor"
+        },
+        {
+          "text": "Nahradil jsem 4 spreadsheets jednou appkou, kterou jsem postavil sám.",
+          "role": "Finanční analytik",
+          "context": "Cursor"
+        }
+      ]
     },
     {
-      "id": "d86834fb-2b4c-483f-aa9e-25f2ca168833",
+      "id": "d04d8913-28a4-4267-a0ac-58cea4fa8447",
       "name": "Claude Code Masterclass",
-      "tagline": "",
-      "description": "Získejte superschopnosti díky AI. Naučíme vás ji využívat tak, že ostatní nepochopí, jak to sakra zvládáte.",
-      "price": "",
+      "tagline": "Nejsilnější AI nástroj současnosti",
+      "description": "Claude Code je AI agent, který pracuje hodiny bez vašeho dohledu. Workshop pro začátečníky i nevývojáře—postavíte reálný projekt a odejdete s workflow, které můžete použít hned. Praha, 9990 Kč.",
+      "price": "Prémiové",
       "url": "https://aibility.cz/claudecode",
-      "features": [],
-      "cta": "Zjistit více"
+      "features": [
+        "Pochopení celého projektu najednou",
+        "Práce přímo v terminálu",
+        "Refactoring, debugging, nové features",
+        "Integrace s existujícím workflow"
+      ],
+      "cta": "Zjistit více",
+      "testimonials": [
+        {
+          "text": "Claude Code mi za den udělal to, co bych programoval týden.",
+          "role": "Startup founder",
+          "context": "Claude Code"
+        }
+      ]
+    },
+    {
+      "id": "02b0f89a-72c9-4b2f-b38b-2519e82a8160",
+      "name": "Aibility",
+      "tagline": "Získejte superschopnosti díky AI",
+      "description": "Jsme AI-first firma, která učí lidi i firmy používat umělou inteligenci prakticky a efektivně. To, co ostatní teprve slibují, my už děláme.",
+      "price": "",
+      "url": "https://aibility.cz",
+      "features": [
+        "AI transformace pro firmy",
+        "Vzdělávací programy pro všechny úrovně",
+        "Live workshopy a webináře",
+        "Praktické AI nástroje a metodiky"
+      ],
+      "cta": "Zjistit více",
+      "testimonials": [
+        {
+          "text": "Díky Aibility jsem přestala mít z AI strach a začala ji používat denně.",
+          "role": "Marketing manager",
+          "context": "Aibility"
+        },
+        {
+          "text": "Konečně někdo, kdo učí AI srozumitelně a bez buzzwords.",
+          "role": "Podnikatel",
+          "context": "Aibility"
+        }
+      ]
+    }
+  ],
+  "articles": [
+    {
+      "id": "2643a6db-1040-44b2-9839-3c3cbf176d79",
+      "title": "Vše, co jste chtěli vědět o vibe codingu: Nástroje, rizika i příklady",
+      "excerpt": "Co je vibe coding, proč je teď zlatá éra tvorby, jak začít vytvářet software bez programátorského vzdělání a jak vibe-codujeme my v Aibility?",
+      "url": "https://aibility.cz/blog/vse-co-jste-chteli-vedet-o-vibe-codingu",
+      "category": "AI",
+      "fullText": "Představte si, že už nemusíte čekat týdny, až vám vývojáři naprogramují jednoduchý interní nástroj. Že už nemusíte platit drahé SaaS aplikace za věci, které byste si nejraději „ohnuli“ podle sebe. Žijeme v době, kdy se hranice mezi tím, kdo kódovat umí a kdo ne, začíná definitivně stírat. Říká se vibe coding a Andrej Karpathy tvrdí, že je to největší změna v historii softwaru. V tomto článku vám ukážeme, proč je teď ta nejlepší chvíle přestat o nápadech jen mluvit a začít je reálně tvořit, i když o programování nevíte vůbec nic. 6. února 2025 napsal Andrej Karpathy - bývalý šéf AI v Tesle a spoluzakladatel OpenAI - tweet, který vidělo přes 4,5 milionu lidí: „Existuje nový způsob programování, kterému říkám vibe coding. Plně se oddáte vibracím, přijmete exponenciály a zapomenete, že kód vůbec existuje. Je to možné, protože LLM modely jsou už příliš dobré. Ani se nedotýkám klávesnice — jen mluvím. Když dostanu chybu, zkopíruju ji bez komentáře a většinou se to opraví. Kód roste za hranice mého chápání... Pro víkendové projekty na jedno použití to není špatné.\" O jedenáct měsíců později (v prosinci 2025) se podle slovníku Collins stal „vibe coding\" slovem roku. Cursor dosáhl valuace 29 miliard dolarů. A čtvrtina startupů v prestižním Y Combinatoru měla kód z 95 % napsaný umělou inteligencí. Žijeme ve zlaté éře tvorby. A většina lidí to zatím ještě nepochopila. Vibe coding není programování. Není to ani „používání ChatGPT ke psaní kódu\". Vibe coding je způsob vytváření softwaru tím, že jen slovy popisujete, co chcete vytvořit, aniž byste přesně rozuměli tomu, jak to funguje na pozadí. Pochopíte, jak fungují datové struktury Debugujete hodiny, když něco nefunguje (debugging = opravování chyb v kódu) Popíšete slovy, co chcete („Chci aplikaci, kam nahraju fotku a AI mi řekne, co je na ní špatně\") Když něco nefunguje, zkopírujete chybu, ukážete ji AI a ona ji opraví Proces opakujete, dokud aplikace nefunguje tak, jak potřebujete Karpathy to popsal trefně: „Vždycky klikám na",
+      "keyInsights": [
+        "Den, kdy se \"narodil\" vibe coding",
+        "Co je vibe coding (a co není)",
+        "Proč je teď vibe coding téma?",
+        "Typické znaky \"vibe codérů\"",
+        "Příběh Toma Pauluse: z designéra makerem",
+        "Co říkají ti, kteří by o vibe codingu měli něco vědět",
+        "Jensen Huang (CEO NVIDIA) - fanoušek",
+        "Bill Gates - skeptik",
+        "Linus Torvalds (tvůrce Linuxu) - pragmatik",
+        "Andrew Ng (zakladatel DeepLearning.AI) - kritik názvu",
+        "Sam Altman (CEO OpenAI) - optimista",
+        "Několik statistik k vibe codingu",
+        "Temnější strana vibe codingu",
+        "Leo: Příběh, který obletěl internet",
+        "SaaStr a smazaná databáze",
+        "72 000 selfie a 13 000 občanek",
+        "K čemu je vibe coding vhodný a k čemu už ne",
+        "K čemu používáme vibe coding v Aibility",
+        "Vibe coding workflow: Proces od nápadu k aplikaci",
+        "Fáze 1: Myšlenka",
+        "Fáze 2: Konverzace s AI",
+        "Fáze 3: Zadání (PRD)",
+        "Fáze 4: Prototypování",
+        "Fáze 5: Iterace",
+        "Fáze 6: Produkce (volitelné)",
+        "Nad čím přemýšlet, když vibe codujete",
+        "Před začátkem projektu",
+        "Když zadáváte AI",
+        "Když něco nefunguje",
+        "Když chcete lepší design",
+        "Pro bezpečnost (důležité!)",
+        "Co bude dál?",
+        "Zlatá éra tvůrců je tady",
+        "Žádná superschopnost už vám neuteče",
+        "Přihlaste se k odběru AI newsletteru. Jednou za měsíc vám pošleme kvalitní čtení a tipy, které využijete v práci i v životě.",
+        "Další články z kategorie",
+        "Aibility",
+        "Aibility",
+        "Aibility"
+      ],
+      "pullQuotes": [
+        "Představte si, že už nemusíte čekat týdny, až vám vývojáři naprogramují jednoduchý interní nástroj",
+        "Říká se vibe coding a Andrej Karpathy tvrdí, že je to největší změna v historii softwaru",
+        "Vibe coding je způsob vytváření softwaru tím, že jen slovy popisujete, co chcete vytvořit, aniž byste přesně rozuměli tomu, jak to funguje na pozadí",
+        "Že už nemusíte platit drahé SaaS aplikace za věci, které byste si nejraději „ohnuli“ podle sebe",
+        "Žijeme v době, kdy se hranice mezi tím, kdo kódovat umí a kdo ne, začíná definitivně stírat"
+      ],
+      "tips": []
+    },
+    {
+      "id": "db7d7d43-397d-4f6b-b3b1-ecad2347d62c",
+      "title": "Budujte si vlastní AI mozek lokálně: Proč je čas vyměnit chat za Cursor",
+      "excerpt": "Ruku na srdce. Jak vypadá vaše práce s AI? Pravděpodobně otevřete prohlížeč, nalogujete se do ChatGPT nebo Clauda a začnete psát. Je to rychlé, je to pohodlné a všichni jsme si na to zvykli.\n\nJenže aniž bychom si to uvědomovali, pomalu se tím uzamykáme do zlaté klece.",
+      "url": "https://aibility.cz/blog/budujte-si-vlastni-ai-mozek-lokalne-proc-je-cas-vymenit-chat-za-cursor",
+      "category": "AI",
+      "fullText": "Ruku na srdce. Jak vypadá vaše práce s AI? Pravděpodobně otevřete prohlížeč, nalogujete se do ChatGPT nebo Clauda a začnete psát. Je to rychlé, je to pohodlné a všichni jsme si na to zvykli. Jenže aniž bychom si to uvědomovali, pomalu se tím uzamykáme do zlaté klece. Odborně se tomu říká Vendor Lock-in (závislost na jednom dodavateli). Lidsky řečeno: každým dnem, kdy krmíte cizí cloud svými nápady, daty a kontextem, se stáváte závislejšími na jedné konkrétní firmě. A co je na tom nejhorší? Ten kontext vám nepatří. Když zítra přijde konkurence s lepším modelem, začínáte od nuly. Váš „AI parťák\" si z minulosti nepamatuje vůbec nic. Pokud to s využíváním AI myslíte vážně, budoucnost není v tom, kdo umí nejlépe chatovat v okně prohlížeče. Budoucnost patří těm, kdo vlastní svůj kontext. A právě tady přichází na scénu nástroj, který mění pravidla hry: Cursor. Možná jste o Cursoru slyšeli jako o složitém nástroji pro programátory. Nenechte se tou nálepkou odradit. Ve skutečnosti je to aplikace, kterou si zdarma stáhnete na cursor.com – jednoduchý textový editor na steroidech, který dělá jednu zásadní věc jinak než ChatGPT: neposíláte data k AI, ale přivádíte AI ke svým datům. V cloudovém chatu jste jako návštěvník v cizím domě. Musíte složitě kopírovat soubory, vysvětlovat souvislosti a doufat, že model nezapomene, o čem jste se bavili před pěti minutami. S Cursorem je AI hostem u vás doma. Vidí přímo do vašich složek, dokumentů a poznámek, ale klíče od domu držíte vy. Tím, že propojíte nejnovější AI modely přímo se svým pevným diskem, odpadá zdlouhavé „krmení\" kontextem. Prostě řeknete: „Podívej se do složky Projekty a vytáhni mi report za minulý měsíc.\" A on to udělá. Hned. Znáte ten pocit nejistoty, když nahrajete do ChatGPT tabulku a poprosíte o analýzu? Model začne sebevědomě chrlit čísla, vypadá to skvěle, ale když si vezmete kalkulačku, zjistíte, že si polovinu vymyslel. Jazykové modely jsou totiž skvělí vypravěči, ale mizerní matematici. Cursor má na tohle geniální",
+      "keyInsights": [
+        "Proč je „lokální\" AI bezpečnější a chytřejší",
+        "Konec halucinací: Když AI počítá, místo aby hádala",
+        "Váš kontext je vaše superschopnost",
+        "Od chatování k budování vlastních nástrojů",
+        "Proč je právě teď ten správný čas začít",
+        "Chcete vidět Cursor v akci?",
+        "Často se ptáte",
+        "Žádná superschopnost už vám neuteče",
+        "Přihlaste se k odběru AI newsletteru. Jednou za měsíc vám pošleme kvalitní čtení a tipy, které využijete v práci i v životě.",
+        "Další články z kategorie",
+        "Aibility",
+        "Aibility",
+        "Aibility"
+      ],
+      "pullQuotes": [
+        "Lidsky řečeno: každým dnem, kdy krmíte cizí cloud svými nápady, daty a kontextem, se stáváte závislejšími na jedné konkrétní firmě",
+        "Možná jste o Cursoru slyšeli jako o složitém nástroji pro programátory",
+        "com – jednoduchý textový editor na steroidech, který dělá jednu zásadní věc jinak než ChatGPT: neposíláte data k AI, ale přivádíte AI ke svým datům",
+        "V cloudovém chatu jste jako návštěvník v cizím domě",
+        "Pravděpodobně otevřete prohlížeč, nalogujete se do ChatGPT nebo Clauda a začnete psát"
+      ],
+      "tips": []
+    },
+    {
+      "id": "1c8a9582-7879-474d-83e6-407b3dfccc3c",
+      "title": "Zvládne toho víc než ChatGPT: 5 věcí, které za vás udělá Cursor",
+      "excerpt": "Otevřete ChatGPT, chcete po něm pomoc s dokumentem, zkopírujete text, vložíte… a narazíte.\n\n\"Zpráva je příliš dlouhá.\" Nebo ještě hůř: \"Promiňte, ale tento formát neumím přečíst.\"\n\nA tak místo práce trávíte čas tím, že texty kouskujete, převádíte, čistíte a doufáte, že si AI pamatuje, co jste jí poslali před pěti minutami.",
+      "url": "https://aibility.cz/blog/5-veci-ktere-za-vas-udela-cursor",
+      "category": "AI",
+      "fullText": "Znáte ten pocit? Otevřete ChatGPT, chcete po něm pomoc s dokumentem, zkopírujete text, vložíte… a narazíte. \"Zpráva je příliš dlouhá.\" Nebo ještě hůř: \"Promiňte, ale tento formát neumím přečíst.\" A tak místo práce trávíte čas tím, že texty kouskujete, převádíte, čistíte a doufáte, že si AI pamatuje, co jste jí poslali před pěti minutami. Existuje lepší cesta. Nástroj, který vidí přímo do složky ve vašem počítači. Nemusíte mu nic posílat, kopírovat ani vysvětlovat kontext. Ačkoli vznikl původně pro programátory, dnes ho začínají používat i marketéři, analytici a všichni ti, co pracují s informacemi. Proč? Protože zatímco ChatGPT o práci většinou jen \"povídá\", Cursor ji za vás reálně udělá. Tady je 5 konkrétních úkolů, které za vás Cursor vyřeší doslova za minutu. A to i bez jediného řádku kódu. Kolikrát jste hledali na Googlu \"CSV to Excel converter free\"? A kolikrát jste pak nahrávali svá citlivá data na pochybné weby plné reklam? S Cursorem tohle končí. Protože má přístup k vašim souborům, stačí mu jednoduše říct: \"Vezmi tenhle CSV soubor s exportem kontaktů a převeď ho do přehledné tabulky v Markdownu.\" \"Tady je pět různých textových souborů. Spoj je do jednoho a ulož jako PDF.\" Cursor si na pozadí napíše krátký skript, soubory vezme, přeformátuje a uloží vám výsledek přímo do složky. Žádné nahrávání do cloudu, žádné čekání. Reálný příklad: Export 2 000 kontaktů z CRM → čistá tabulka s filtrovanými daty. Ručně: 45 minut. V Cursoru: 30 sekund. Představte si, že děláte rešerši. Chcete analyzovat, jak konkurence píše o novém trendu. Nebo potřebujete stáhnout všechny návody z oblíbeného blogu, abyste je měli offline. Dřív jste měli dvě možnosti: otevírat jednu stránku po druhé a kopírovat text do Wordu, nebo si najmout programátora, aby vám napsal skript. V Cursoru ale jen otevřete chat a napíšete: \"Jdi na web X, stáhni všechny články z kategorie 'Blog' a ulož mi je jako samostatné textové soubory do složky 'Konkurence'.\" Cursor umí otevřít prohlížeč, projít odkazy a ",
+      "keyInsights": [
+        "1. Bleskový převod formátů (Konec online konvertorům)",
+        "2. Web scraping pro běžné smrtelníky",
+        "3. Analýza dat, které se dá věřit",
+        "4. Tvorba obsahu s kontextem",
+        "5. Vlastní mini-nástroje bez programování",
+        "Jak začít (bezpečně a zdarma)",
+        "Chcete do začátku průvodce?",
+        "Často se ptáte",
+        "1. Musím si Cursor instalovat nebo existuje i webová varianta?",
+        "2. Potřebuji si platit zvlášť ChatGPT nebo Claude, abych mohl používat Cursor?",
+        "3. Když Cursor vytvoří nebo převede soubor, uvidím ho na svém disku?",
+        "4. Ověřujete správnost výsledků, nebo Cursoru věříte?",
+        "5. Stačí mi free verze Cursoru?",
+        "Žádná superschopnost už vám neuteče",
+        "Přihlaste se k odběru AI newsletteru. Jednou za měsíc vám pošleme kvalitní čtení a tipy, které využijete v práci i v životě.",
+        "Další články z kategorie",
+        "Aibility",
+        "Aibility",
+        "Aibility"
+      ],
+      "pullQuotes": [
+        "\" A tak místo práce trávíte čas tím, že texty kouskujete, převádíte, čistíte a doufáte, že si AI pamatuje, co jste jí poslali před pěti minutami",
+        "Tady je 5 konkrétních úkolů, které za vás Cursor vyřeší doslova za minutu",
+        "Spoj je do jednoho a ulož jako PDF",
+        "Chcete analyzovat, jak konkurence píše o novém trendu",
+        "Otevřete ChatGPT, chcete po něm pomoc s dokumentem, zkopírujete text, vložíte… a narazíte"
+      ],
+      "tips": [
+        "Otevřete ChatGPT, chcete po něm pomoc s dokumentem, zkopírujete text, vložíte… a narazíte",
+        "Protože má přístup k vašim souborům, stačí mu jednoduše říct: \"Vezmi tenhle CSV soubor s exportem kontaktů a převeď ho do přehledné tabulky v Markdownu"
+      ]
+    },
+    {
+      "id": "b662ca33-5f74-4b3a-8570-3f54056b63c2",
+      "title": "AI v náboru: Jak najmout člověka s AI mindsetem",
+      "excerpt": "Představte si situaci, která se dnes děje v tisících firem. Na jedné straně sedí kandidát, který si nechal životopis a motivační dopis vygenerovat přes ChatGPT, aby vypadal jako dokonalá shoda pro vaši pozici. \n\nNa druhé straně sedí náborář, který používá AI nástroj k tomu, aby ty stovky \"dokonalých\" životopisů prosel a vybral ty nejlepší.\n\nVýsledkem je bizarní válka AI proti AI, kde se ztrácí to nejdůležitější – člověk.",
+      "url": "https://aibility.cz/blog/ai-v-naboru-jak-najmout-cloveka-s-ai-mindsetem",
+      "category": "AI",
+      "fullText": "Představte si situaci, která se dnes děje v tisících firem. Na jedné straně sedí kandidát, který si nechal životopis a motivační dopis vygenerovat přes ChatGPT, aby vypadal jako dokonalá shoda pro vaši pozici. Na druhé straně sedí náborář, který používá AI nástroj k tomu, aby ty stovky \"dokonalých\" životopisů prosel a vybral ty nejlepší. Výsledkem je bizarní válka AI proti AI, kde se ztrácí to nejdůležitější – člověk. Pokud dnes hledáte lidi, kteří mají vaši firmu posunout dopředu, nemůžete se spoléhat na klíčová slova v CV. Skutečná \"AI gramotnost\" totiž není o tom, že někdo umí napsat prompt. Je o způsobu myšlení. Je o tom, jak se člověk staví k problémům, když má v kapse superpočítač. Jak tedy poznat kandidáta, který o AI jen nemluví, ale má skutečné superschopnosti? Dřív jsme v inzerátech vyžadovali znalost konkrétních nástrojů. Word, Excel, Photoshop. Dnes je to vedlejší. Nástroje se mění každý týden. To, co zůstává, je AI Mindset. V praxi to funguje podle pravidla 90/10. 90 % práce dokáže udělat umělá inteligence. 10 % je ten lidský vklad – kontext, zadání, vkus a finální rozhodnutí. Pokud najdete člověka, který má oněch 10 % zvládnutých na mistrovské úrovni, získáte zaměstnance, který má výkon celého oddělení. Takový člověk nečeká, až ho pošlete na školení. Má problém? Zeptá se AI. Neví, jak na to? Nechá si to vysvětlit od AI. Zasekl se? AI ho odblokuje. Této vlastnosti se říká High Agency. Je to vysoká míra vlastnictví problému a proaktivity. Je to přesný opak věty \"to nejde\" nebo \"nevím, jak se to dělá\". V době, kdy máte odpověď na cokoliv na dosah ruky, je neznalost volbou, ne omluvou. Když sedíte na pohovoru (nebo procházíte LinkedIn profily), hledejte tyto tři signály. Pokud je kandidát má, držte se ho. Jak už jsme zmínili – je to schopnost vzít úkol a dotáhnout ho, ať se děje cokoliv. Kandidát s touto vlastností nepřijde s tím, že úkol nesplnil, protože \"čekal na kolegu\" nebo \"nefungoval software\". Najde cestu okolo. Použije AI jako páku k odstranění př",
+      "keyInsights": [
+        "Zapomeňte na \"umí s Excelem\". Hledejte High Agency",
+        "3 superschopnosti, které oddělují zrno od plev",
+        "1. Vlastnictví problému (High Agency)",
+        "2. Umění \"flirtovat\" s AI (Komunikace)",
+        "3. Učení \"Just-in-Time\"",
+        "Jak to otestovat v praxi?",
+        "Past, do které padají firmy: Chcete Ferrari, ale zacházet umíte jen s Felicií",
+        "Nábor je jen začátek",
+        "Chcete se o praktickém využití AI dozvědět víc?",
+        "Často se ptáte",
+        "Je pravda, že kandidáti píší do CV „bílým písmem“ vzkazy pro AI? Máme to nějak řešit?",
+        "Mám kandidátům říkat, že je vyhodnocuje AI?",
+        "Co dělat, když kandidát používá AI nápovědu přímo při pohovoru?",
+        "Jak poznám firmu, která mi skutečně dovolí používat AI?",
+        "Žádná superschopnost už vám neuteče",
+        "Přihlaste se k odběru AI newsletteru. Jednou za měsíc vám pošleme kvalitní čtení a tipy, které využijete v práci i v životě.",
+        "Další články z kategorie",
+        "Aibility",
+        "Aibility",
+        "Aibility"
+      ],
+      "pullQuotes": [
+        "Na jedné straně sedí kandidát, který si nechal životopis a motivační dopis vygenerovat přes ChatGPT, aby vypadal jako dokonalá shoda pro vaši pozici",
+        "Na druhé straně sedí náborář, který používá AI nástroj k tomu, aby ty stovky \"dokonalých\" životopisů prosel a vybral ty nejlepší",
+        "Je o tom, jak se člověk staví k problémům, když má v kapse superpočítač",
+        "Dřív jsme v inzerátech vyžadovali znalost konkrétních nástrojů",
+        "V praxi to funguje podle pravidla 90/10"
+      ],
+      "tips": [
+        "Pokud dnes hledáte lidi, kteří mají vaši firmu posunout dopředu, nemůžete se spoléhat na klíčová slova v CV"
+      ]
+    },
+    {
+      "id": "222c74b9-3e59-44b0-a8d3-1a6c1911dd7e",
+      "title": "Proč vaše AI píše obecné fráze a jak to změnit správnými daty",
+      "excerpt": "Znáte ten pocit frustrace? Ladíte svůj prompt k dokonalosti, přidáváte instrukce „buď víc kreativní“, zkoušíte různé magické formulace, ale výsledek je pořád takový... nemastný neslaný. Texty jsou plné klišé a celé to působí jako šedý průměr.\n\nMáme pro vás možná nepříjemnou pravdu: Chyba pravděpodobně není ve vašem promptu. Chyba je v kontextu, který jste AI (ne)dali.",
+      "url": "https://aibility.cz/blog/proc-vase-ai-pise-obecne-fraze",
+      "category": "AI",
+      "fullText": "Znáte ten pocit frustrace? Ladíte svůj prompt k dokonalosti, přidáváte instrukce „buď víc kreativní“, zkoušíte různé magické formulace, ale výsledek je pořád takový... nemastný neslaný. Texty jsou plné klišé a celé to působí jako šedý průměr. Máme pro vás možná nepříjemnou pravdu: Chyba pravděpodobně není ve vašem promptu. Chyba je v kontextu, který jste AI (ne)dali. Zatímco většina lidí řeší, jak se ptát (tzv. Prompt Engineering), ti pokročilejší z nich řeší, co a jak do AI dávají (Context Management). Platí zde totiž jednoduchá rovnice: Průměrný prompt + Skvělý kontext = Velmi dobrý výsledek Geniální prompt + Žádný kontext = Průměrný výsledek Představte si AI jako skvělého kuchaře. Je to mistr svého řemesla. Ale když mu nedáte kvalitní suroviny, michelinské menu vám z nich zkrátka neuvaří. Když do ChatGPT (nebo jiného AI nástroje) nevložíte dostatečný kontext, nutíte ho vařit z vody (respektive z jeho obecných tréninkových dat). Dá vám průměrnou odpověď, která sedí na 90 % firem, ale na žádnou z nich dokonale. Právě nedostatek kontextu je nejčastějším důvodem tzv. halucinací AI, kdy si model začne vymýšlet fakta, aby zaplnil prázdná místa. Pokud chcete výstup, který řeší váš problém, vaši strategii a mluví vaším jazykem, musíte otevřít spíž s top surovinami. Musíte AI pustit ke svým datům. Co všechno může být tím „zlatým kontextem“? Skoro cokoliv digitálního, co ve firmě máte. Neomezujte se jen na text. Příprava dat pro AI může zahrnovat: Screenshoty: AI má oči. Vyfoťte web, který se vám líbí. Vyfoťte nepřehledný graf z Analytics. Vyfoťte rozpracovaný design ve Figmě. Přepisy hovorů: Toto je podceňovaný zlatý důl. Místo abyste AI složitě popisovali, co klient chce, dejte jí přečíst doslovný přepis vašeho callu nebo i vlákno mailové komunikace. „Tady je přepis stížnosti klienta. Napiš mu empatickou odpověď.“ Interní dokumenty: PDFka, staré strategie, e-maily, brand manuály, prezentace. Webové odkazy: Dokumentace k softwaru, články, inspirativní weby. Tady dělá chyb",
+      "keyInsights": [
+        "Konec obecných frází a halucinací",
+        "Kde brát data pro AI? Všechno může být součástí promptu",
+        "Jak data připravit: Čistota dat je polovina úspěchu",
+        "Mini případová studie: Jak vzniká web díky kombinaci různých dat",
+        "Staňte se kurátorem informací",
+        "Často se ptáte",
+        "Jak často bych měl/a AI používat, aby mi to opravdu pomáhalo?",
+        "Která AI je nejlepší na texty?",
+        "Stačí bezplatná verze, nebo se vyplatí platit?",
+        "Jsou moje data v bezpečí?",
+        "Co dělat, když se zaseknu a nevím, jak dál?",
+        "Musím umět promptovat, nebo stačí používat hotové GPTs asistenty?",
+        "Žádná superschopnost už vám neuteče",
+        "Přihlaste se k odběru AI newsletteru. Jednou za měsíc vám pošleme kvalitní čtení a tipy, které využijete v práci i v životě.",
+        "Další články z kategorie",
+        "Aibility",
+        "Aibility",
+        "Aibility"
+      ],
+      "pullQuotes": [
+        "Texty jsou plné klišé a celé to působí jako šedý průměr",
+        "Zatímco většina lidí řeší, jak se ptát (tzv",
+        "Prompt Engineering), ti pokročilejší z nich řeší, co a jak do AI dávají (Context Management)",
+        "Ladíte svůj prompt k dokonalosti, přidáváte instrukce „buď víc kreativní“, zkoušíte různé magické formulace, ale výsledek je pořád takový",
+        "Máme pro vás možná nepříjemnou pravdu: Chyba pravděpodobně není ve vašem promptu"
+      ],
+      "tips": []
+    },
+    {
+      "id": "c0a737e2-c972-4541-85fd-3e7a95d4dfc4",
+      "title": "5 úkolů, které za vás udělá AI: ChatGPT, Gemini a další nástroje v praxi",
+      "excerpt": "Umělá inteligence vám může ušetřit hodiny práce týdně – stačí změnit způsob myšlení. Slyšeli jste už o přístupu \"AI First\"? Možná to zní jako další moderní buzzword, ale ve skutečnosti jde o jednoduchou změnu, která vám otevře dveře k efektivnější práci.",
+      "url": "https://aibility.cz/blog/5-ukolu-ktere-za-vas-udela-ai",
+      "category": "AI",
+      "fullText": "Umělá inteligence vám může ušetřit hodiny práce týdně – stačí změnit způsob myšlení. Slyšeli jste už o přístupu \"AI First\"? Možná to zní jako další moderní buzzword, ale ve skutečnosti jde o jednoduchou změnu, která vám otevře dveře k efektivnější práci. Představte si to takhle: Dřív, když jste dostali nový úkol, automaticky jste se do něj pustili sami. Dnes se ale nejprve zastavíte a položíte si otázku: \"Jak mi s tím může pomoci umělá inteligence?\" Nejde o to, že by za vás AI udělala všechnu práci (zatím). Jde o to začít ji brát jako chytrého kolegu, který sedí vedle vás. Kolegu, který nikdy nespí, umí perfektně anglicky, napíše e-mail za tři sekundy a dokáže \"přečíst\" padesátistránkový dokument, zatímco si vaříte kávu. Pojďme se podívat na 5 konkrétních situací z běžného pracovního dne, kdy vám AI vytrhne trn z paty. Znáte to. Máte za sebou hodinovou schůzku s klientem, v bloku jen pár chaotických poznámek a před sebou úkol vytvořit z toho smysluplný zápis pro tým a hezký e-mail pro klienta. Dříve práce na půl hodiny. S ChatGPT? Práce na tři minuty. Vezměte své poznámky (klidně je jen vyfoťte mobilem nebo zkopírujte ten chaos přímo do chatu). Zadejte jednoduchý pokyn: \"Vytvoř mi z těchto poznámek strukturovaný zápis pro kolegy do Slacku.\" A je to. Tím ale nekončíme. Síla AI spočívá v tom, že s ní můžete mluvit dál (iterovat). Zdá se vám zápis příliš dlouhý? Napište: \"Zkrať to jen na hlavní body.\" Potřebujete e-mail pro klienta? Napište: \"Teď z toho vytvoř milý follow-up e-mail pro klienta. Poděkuj za schůzku a shrň další kroky.\" Je klient ze zahraničí? \"Přepiš to do angličtiny.\" 💡 Tip: Vyzkoušejte funkci Canvas. Když si necháte vygenerovat text, řekněte AI: \"Otevři to v Canvasu\". Otevře se vám speciální editor, kde můžete text přímo upravovat, označovat konkrétní odstavce a nechat si přepsat jen vybrané části, aniž byste museli generovat vše znovu. Častá námitka zní: \"Ale ty texty z AI jsou takové robotické. To nejsem já.\" Máte pravdu. Pokud AI neřeknete, jak má ",
+      "keyInsights": [
+        "1. Zápisy z porad a e-maily v ChatGPT",
+        "2. Jak naučit AI psát vaším stylem (Tone of Voice)",
+        "3. Profesionální fotka bez ateliéru s Gemini",
+        "4. AI rešerše a ověřování faktů s Perplexity",
+        "5. Studium dokumentů a videí s NotebookLM",
+        "Jak začít a nezbláznit se z toho?",
+        "Často se ptáte",
+        "Je ChatGPT zdarma?",
+        "Jak začít používat ChatGPT?",
+        "Funguje ChatGPT v češtině?",
+        "Jak zabránit tomu, aby AI „halucinovala\" (vymýšlela si)?",
+        "Kolik času mi AI reálně ušetří?",
+        "Jaký je rozdíl mezi ChatGPT, Claude a Gemini?",
+        "Žádná superschopnost už vám neuteče",
+        "Přihlaste se k odběru AI newsletteru. Jednou za měsíc vám pošleme kvalitní čtení a tipy, které využijete v práci i v životě.",
+        "Další články z kategorie",
+        "Aibility",
+        "Aibility",
+        "Aibility"
+      ],
+      "pullQuotes": [
+        "Možná to zní jako další moderní buzzword, ale ve skutečnosti jde o jednoduchou změnu, která vám otevře dveře k efektivnější práci",
+        "Umělá inteligence vám může ušetřit hodiny práce týdně – stačí změnit způsob myšlení",
+        "Jde o to začít ji brát jako chytrého kolegu, který sedí vedle vás",
+        "Pojďme se podívat na 5 konkrétních situací z běžného pracovního dne, kdy vám AI vytrhne trn z paty",
+        "Zadejte jednoduchý pokyn: \"Vytvoř mi z těchto poznámek strukturovaný zápis pro kolegy do Slacku"
+      ],
+      "tips": [
+        "Umělá inteligence vám může ušetřit hodiny práce týdně – stačí změnit způsob myšlení",
+        "Napište: \"Zkrať to jen na hlavní body",
+        "Napište: \"Teď z toho vytvoř milý follow-up e-mail pro klienta",
+        "\" 💡 Tip: Vyzkoušejte funkci Canvas"
+      ]
     }
   ],
   "quotes": [
     {
-      "id": "a277918c-9583-4f6c-a689-c5f56aafcd89",
+      "id": "23022ebc-fd1f-4323-aa1d-3c47a0205963",
       "text": "Aibility dělá AI lidskou. Pomáhá lidem získat superschopnosti díky AI.",
       "source": "brand",
       "category": "mission"
     },
     {
-      "id": "cab9a91c-0353-4f7e-97c5-60cdf0e25437",
+      "id": "b8191ff1-6c09-4ee5-9571-740b6aa95a8b",
       "text": "To, co ostatní teprve slibují, my už děláme. To, co učíme, sami žijeme.",
       "source": "brand",
       "category": "mission"
     },
     {
-      "id": "a000fef4-86aa-4150-8cc3-9b56144f1921",
+      "id": "6f8f7a4b-cc30-477d-9b3a-528b1680bede",
       "text": "Jsme AI first. Děláme to jinak a děláme to nejlépe.",
       "source": "brand",
       "category": "mission"
     },
     {
-      "id": "63fed4fa-4288-4e0b-9f6c-b98853d777c6",
+      "id": "27f679a2-a136-4bd2-b8ea-f09fe856a6b9",
+      "text": "Nepřekládáme články o budoucnosti práce, ale rovnou ji tvoříme.",
+      "source": "brand",
+      "category": "mission"
+    },
+    {
+      "id": "7a5e4335-1e90-4926-b20d-f226e8c171f1",
       "text": "Získejte superschopnosti díky AI.",
       "source": "brand",
       "category": "tagline"
     },
     {
-      "id": "6eb46df0-b24d-4f27-88ae-efe3ea99fd6e",
+      "id": "14e67511-ce17-415d-b768-f642cbe0cd1f",
       "text": "Za 3 hodiny zvládnete to, co by vám dřív trvalo celý týden.",
       "source": "brand",
       "category": "benefit"
     },
     {
-      "id": "0e5e7761-fd27-44c3-981b-41b369aae40c",
+      "id": "00203c9c-f5f3-4920-b0c4-873c03fd0fe2",
       "text": "Odnesete si funkční prompty a hotovou šablonu. Zítra ušetříte první hodinu.",
       "source": "brand",
       "category": "benefit"
     },
     {
-      "id": "bd5554f6-833c-40cc-831d-07705cce74aa",
-      "text": "Učte se od nejlepších AI expertů. Získejte přístup ke všem webinářům.",
-      "source": "brand",
-      "category": "benefit"
+      "id": "cd6ff85a-1816-478b-9716-5e6d33869e64",
+      "text": "AI není hrozba. Je to nástroj, který zesiluje vaše schopnosti.",
+      "source": "insight",
+      "category": "ai"
     },
     {
-      "id": "e60cd811-0518-472b-9739-532feaf71ad9",
-      "text": "Nepřekládáme články o budoucnosti práce, ale rovnou ji tvoříme.",
-      "source": "brand",
-      "category": "mission"
+      "id": "6394f76b-7e7e-45d3-8b8a-cc10385090a3",
+      "text": "Budoucnost patří těm, kteří umí s AI spolupracovat, ne těm, kteří se jí bojí.",
+      "source": "insight",
+      "category": "ai"
+    },
+    {
+      "id": "dd53130a-07ee-4573-a353-a144f6b99985",
+      "text": "Nejlepší prompt je ten, který dává AI kontext a jasný cíl.",
+      "source": "insight",
+      "category": "ai"
+    },
+    {
+      "id": "844ecb9d-507a-4ae6-bd89-4f9fd1c7887e",
+      "text": "AI nenahradí lidi, ale lidé s AI nahradí lidi bez AI.",
+      "source": "insight",
+      "category": "ai"
+    },
+    {
+      "id": "a95ae2b4-5c83-43d1-9a1e-adeff427d8b6",
+      "text": "Automatizujte nudné úkoly. Zaměřte se na to, co vás baví.",
+      "source": "insight",
+      "category": "productivity"
+    },
+    {
+      "id": "07786e58-b352-481f-b80b-dfb4c72c8e92",
+      "text": "AI vám neušetří čas, pokud nevíte, co s ním chcete dělat.",
+      "source": "insight",
+      "category": "productivity"
     }
   ],
-  "scrapedAt": "2026-02-03T15:25:26.622Z"
+  "scrapedAt": "2026-02-08T19:34:07.339Z"
 }

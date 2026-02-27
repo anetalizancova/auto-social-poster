@@ -4,7 +4,7 @@
  * Publikuje posty na X a Threads
  */
 
-import type { GeneratedPost, Platform } from './types';
+import type { GeneratedPost } from './types';
 
 const API_URL = 'https://api.upload-post.com/api';
 const API_KEY = process.env.UPLOAD_POST_API_KEY;
@@ -60,28 +60,36 @@ export async function publishPost(post: GeneratedPost, scheduleForLater: boolean
     const data = await response.json();
     console.log(`📤 Upload Post [${response.status}]:`, JSON.stringify(data).substring(0, 500));
     
-    // 202 = scheduled successfully
-    if (response.status === 202 || data.success) {
-      // Získej URL postu z odpovědi
+    // 202 = scheduled successfully (Upload Post returns 202 for scheduled posts)
+    if (response.status === 202) {
+      return {
+        success: true,
+        postUrl: data.results?.[post.platform]?.url || data.url || undefined,
+        scheduled: true,
+      };
+    }
+    
+    // 200 = published immediately
+    if (response.ok && (data.success || data.results)) {
       const platformResult = data.results?.[post.platform];
       
-      if (platformResult?.success) {
+      if (platformResult?.success || data.success) {
         return {
           success: true,
-          postUrl: platformResult.url,
+          postUrl: platformResult?.url || data.url || undefined,
           scheduled: scheduleForLater,
         };
       }
       
       return {
         success: false,
-        error: platformResult?.error || 'Unknown error',
+        error: platformResult?.error || data.error || 'Platform result not successful',
       };
     }
     
     return {
       success: false,
-      error: data.message || data.error || JSON.stringify(data) || 'Upload failed',
+      error: data.message || data.error || `Upload failed (HTTP ${response.status})`,
     };
     
   } catch (error) {

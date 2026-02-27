@@ -1,8 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { format } from 'date-fns';
-import { cs } from 'date-fns/locale';
+import { useState, useEffect, useCallback } from 'react';
 
 interface Post {
   id: string;
@@ -12,9 +10,11 @@ interface Post {
   platform: 'x' | 'threads';
   scheduledFor: string;
   status: 'pending' | 'scheduled' | 'posted' | 'failed';
-  sourceUrl?: string;   // Link v postu (CTA)
-  postUrl?: string;     // URL publikovaného postu
+  sourceUrl?: string;
+  postUrl?: string;
   error?: string;
+  angle?: string;
+  edited?: boolean;
   createdAt: string;
 }
 
@@ -40,20 +40,18 @@ interface QueueData {
 const TYPE_LABELS: Record<string, string> = {
   webinar_invite: '📅 Webinář',
   webinar_reminder: '⏰ Reminder',
-  product_benefit: '💎 Benefit',
+  product_benefit: '💎 Produkt',
   product_promo: '🛍️ Promo',
   product_cta: '🎯 CTA',
-  blog_insight: '📝 Blog',
-  blog_quote: '📖 Článek',
+  product_testimonial: '💬 Testimonial',
   blog_tip: '💡 Blog tip',
-  testimonial: '💬 Recenze',
+  blog_insight: '🧠 Blog insight',
+  blog_quote: '📖 Blog citát',
+  blog_highlight: '📝 Blog highlight',
   brand_mission: '🚀 Brand',
   ai_tip: '🤖 AI Tip',
   ai_insight: '🧠 AI Insight',
   thought_leadership: '✨ Expert',
-  quote: '💬 Quote',
-  tip: '💡 Tip',
-  highlight: '✨ Highlight',
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -63,10 +61,58 @@ const STATUS_COLORS: Record<string, string> = {
   failed: 'bg-red-100 text-red-800',
 };
 
+const STATUS_LABELS: Record<string, string> = {
+  pending: 'Čekající',
+  scheduled: 'Naplánováno',
+  posted: 'Publikováno',
+  failed: 'Chyba',
+};
+
 const PLATFORM_ICONS: Record<string, string> = {
   x: '𝕏',
   threads: '🧵',
 };
+
+function formatDatePrague(dateStr: string): string {
+  try {
+    return new Intl.DateTimeFormat('cs-CZ', {
+      timeZone: 'Europe/Prague',
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date(dateStr));
+  } catch {
+    return dateStr;
+  }
+}
+
+function formatShortDatePrague(dateStr: string): string {
+  try {
+    return new Intl.DateTimeFormat('cs-CZ', {
+      timeZone: 'Europe/Prague',
+      day: 'numeric',
+      month: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date(dateStr));
+  } catch {
+    return dateStr;
+  }
+}
+
+function formatTimePrague(dateStr: string): string {
+  try {
+    return new Intl.DateTimeFormat('cs-CZ', {
+      timeZone: 'Europe/Prague',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date(dateStr));
+  } catch {
+    return dateStr;
+  }
+}
 
 export default function Dashboard() {
   const [queue, setQueue] = useState<QueueData | null>(null);
@@ -74,25 +120,24 @@ export default function Dashboard() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchQueue = async () => {
+  const fetchQueue = useCallback(async () => {
     try {
       const res = await fetch('/api/queue');
       const data = await res.json();
       setQueue(data);
       setError(null);
-    } catch (err) {
+    } catch {
       setError('Nepodařilo se načíst frontu');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchQueue();
-    // Refresh every 30 seconds
     const interval = setInterval(fetchQueue, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchQueue]);
 
   const handleScrape = async () => {
     setActionLoading('scrape');
@@ -100,12 +145,12 @@ export default function Dashboard() {
       const res = await fetch('/api/scrape');
       const data = await res.json();
       if (data.success) {
-        alert(`✅ Scrape hotový!\n\nWebináře: ${data.stats.webinars}\nProdukty: ${data.stats.products}\nČlánky: ${data.stats.articles || 0}\nTestimonials: ${data.stats.testimonials || 0}\nQuotes: ${data.stats.quotes}`);
+        alert(`Scrape hotový!\n\nWebináře: ${data.stats.webinars}\nProdukty: ${data.stats.products}\nČlánky: ${data.stats.articles || 0}\nTestimonials: ${data.stats.testimonials || 0}\nQuotes: ${data.stats.quotes}`);
       } else {
-        alert(`❌ Chyba: ${data.error}`);
+        alert(`Chyba: ${data.error}`);
       }
     } catch {
-      alert('❌ Chyba při scrape');
+      alert('Chyba při scrape');
     } finally {
       setActionLoading(null);
     }
@@ -117,13 +162,13 @@ export default function Dashboard() {
       const res = await fetch('/api/generate', { method: 'POST' });
       const data = await res.json();
       if (data.success) {
-        alert(`✅ Vygenerováno ${data.stats.generated} postů!`);
+        alert(`Vygenerováno ${data.stats.generated} postů!`);
         fetchQueue();
       } else {
-        alert(`❌ Chyba: ${data.error}`);
+        alert(`Chyba: ${data.error}`);
       }
     } catch {
-      alert('❌ Chyba při generování');
+      alert('Chyba při generování');
     } finally {
       setActionLoading(null);
     }
@@ -135,15 +180,15 @@ export default function Dashboard() {
       const res = await fetch('/api/post', { method: 'POST' });
       const data = await res.json();
       if (data.success && data.published) {
-        alert(`✅ Publikováno na ${data.post.platform}!\n\n${data.post.url || ''}`);
+        alert(`Publikováno na ${data.post.platform}!\n\n${data.post.url || ''}`);
         fetchQueue();
       } else if (data.success && !data.published) {
-        alert('ℹ️ Žádný post k publikaci');
+        alert('Žádný post k publikaci');
       } else {
-        alert(`❌ Chyba: ${data.error}`);
+        alert(`Chyba: ${data.error}`);
       }
     } catch {
-      alert('❌ Chyba při publikování');
+      alert('Chyba při publikování');
     } finally {
       setActionLoading(null);
     }
@@ -158,43 +203,45 @@ export default function Dashboard() {
       if (data.success) {
         fetchQueue();
       } else {
-        alert(`❌ Chyba: ${data.error}`);
+        alert(`Chyba: ${data.error}`);
       }
     } catch {
-      alert('❌ Chyba při mazání');
+      alert('Chyba při mazání');
+    }
+  };
+
+  const handleEdit = async (postId: string, content_x: string, content_threads: string) => {
+    try {
+      const res = await fetch('/api/queue', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: postId, content_x, content_threads }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchQueue();
+      } else {
+        alert(`Chyba: ${data.error}`);
+      }
+    } catch {
+      alert('Chyba při ukládání');
     }
   };
 
   const handleClearQueue = async () => {
-    if (!confirm('Opravdu smazat VŠECHNY pending posty?')) return;
+    if (!confirm('Opravdu smazat VŠECHNY posty z fronty?')) return;
     
     try {
       const res = await fetch('/api/queue?clearAll=true', { method: 'DELETE' });
       const data = await res.json();
       if (data.success) {
-        alert(`✅ Smazáno ${data.deleted} postů`);
+        alert(`Smazáno ${data.deleted} postů`);
         fetchQueue();
       } else {
-        alert(`❌ Chyba: ${data.error}`);
+        alert(`Chyba: ${data.error}`);
       }
     } catch {
-      alert('❌ Chyba při mazání');
-    }
-  };
-
-  const formatDate = (dateStr: string) => {
-    try {
-      return format(new Date(dateStr), 'EEEE d. MMMM HH:mm', { locale: cs });
-    } catch {
-      return dateStr;
-    }
-  };
-
-  const formatShortDate = (dateStr: string) => {
-    try {
-      return format(new Date(dateStr), 'HH:mm', { locale: cs });
-    } catch {
-      return dateStr;
+      alert('Chyba při mazání');
     }
   };
 
@@ -248,40 +295,40 @@ export default function Dashboard() {
         </div>
 
         {/* Actions */}
-        <div className="flex gap-4 mb-8">
+        <div className="flex flex-wrap gap-3 mb-8">
           <button
             onClick={handleScrape}
             disabled={actionLoading !== null}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm"
           >
-            {actionLoading === 'scrape' ? 'Scrapuji...' : '🔍 Scrape web'}
+            {actionLoading === 'scrape' ? 'Scrapuji...' : 'Scrape web'}
           </button>
           <button
             onClick={handleGenerate}
             disabled={actionLoading !== null}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 text-sm"
           >
-            {actionLoading === 'generate' ? 'Generuji...' : '🤖 Generovat posty'}
+            {actionLoading === 'generate' ? 'Generuji...' : 'Generovat posty'}
           </button>
           <button
             onClick={handlePostNow}
             disabled={actionLoading !== null}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-sm"
           >
-            {actionLoading === 'post' ? 'Publikuji...' : '📤 Publikovat teď'}
+            {actionLoading === 'post' ? 'Publikuji...' : 'Publikovat ted'}
           </button>
           <button
             onClick={fetchQueue}
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm"
           >
-            🔄 Obnovit
+            Obnovit
           </button>
           {((queue?.stats.pending || 0) + (queue?.stats.scheduled || 0)) > 0 && (
             <button
               onClick={handleClearQueue}
-              className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
+              className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-sm"
             >
-              🗑️ Vymazat frontu
+              Vymazat frontu
             </button>
           )}
         </div>
@@ -289,10 +336,10 @@ export default function Dashboard() {
         {/* Next Post */}
         {queue?.stats.nextPost && (
           <div className="bg-white rounded-lg p-4 shadow-sm mb-8 border-l-4 border-blue-500">
-            <div className="text-sm text-gray-500 mb-1">Příští post</div>
+            <div className="text-sm text-gray-500 mb-1">Pristi post</div>
             <div className="flex items-center gap-2 mb-2">
               <span className="text-2xl">{PLATFORM_ICONS[queue.stats.nextPost.platform]}</span>
-              <span className="font-medium">{formatDate(queue.stats.nextPost.scheduledFor)}</span>
+              <span className="font-medium">{formatDatePrague(queue.stats.nextPost.scheduledFor)}</span>
             </div>
             <p className="text-gray-700">
               {queue.stats.nextPost.platform === 'x' 
@@ -305,10 +352,10 @@ export default function Dashboard() {
         {/* Today */}
         {queue?.stats.todayPosts && queue.stats.todayPosts.length > 0 && (
           <div className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">📅 Dnes</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Dnes</h2>
             <div className="space-y-3">
               {queue.stats.todayPosts.map(post => (
-                <PostCard key={post.id} post={post} onDelete={handleDelete} />
+                <PostCard key={post.id} post={post} onDelete={handleDelete} onEdit={handleEdit} />
               ))}
             </div>
           </div>
@@ -317,10 +364,10 @@ export default function Dashboard() {
         {/* Tomorrow */}
         {queue?.stats.tomorrowPosts && queue.stats.tomorrowPosts.length > 0 && (
           <div className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">📆 Zítra</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Zitra</h2>
             <div className="space-y-3">
               {queue.stats.tomorrowPosts.map(post => (
-                <PostCard key={post.id} post={post} onDelete={handleDelete} />
+                <PostCard key={post.id} post={post} onDelete={handleDelete} onEdit={handleEdit} />
               ))}
             </div>
           </div>
@@ -328,14 +375,14 @@ export default function Dashboard() {
 
         {/* All Posts */}
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">📋 Všechny posty ({queue?.posts.length || 0})</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Vsechny posty ({queue?.posts.length || 0})</h2>
           <div className="space-y-3">
-            {queue?.posts.slice(0, 20).map(post => (
-              <PostCard key={post.id} post={post} onDelete={handleDelete} showDate />
+            {queue?.posts.slice(0, 30).map(post => (
+              <PostCard key={post.id} post={post} onDelete={handleDelete} onEdit={handleEdit} showDate />
             ))}
-            {(queue?.posts.length || 0) > 20 && (
+            {(queue?.posts.length || 0) > 30 && (
               <p className="text-gray-500 text-center py-4">
-                ... a dalších {(queue?.posts.length || 0) - 20} postů
+                ... a dalsich {(queue?.posts.length || 0) - 30} postu
               </p>
             )}
           </div>
@@ -343,70 +390,187 @@ export default function Dashboard() {
 
         {/* Footer */}
         <div className="mt-8 pt-8 border-t text-center text-gray-400 text-sm">
-          <p>Naposledy generováno: {queue?.lastGenerated ? formatDate(queue.lastGenerated) : 'nikdy'}</p>
-          <p>Naposledy publikováno: {queue?.lastPosted ? formatDate(queue.lastPosted) : 'nikdy'}</p>
+          <p>Naposledy generovano: {queue?.lastGenerated ? formatDatePrague(queue.lastGenerated) : 'nikdy'}</p>
+          <p>Naposledy publikovano: {queue?.lastPosted ? formatDatePrague(queue.lastPosted) : 'nikdy'}</p>
         </div>
       </div>
     </div>
   );
 }
 
+// ============================================================
+// PostCard s inline editing
+// ============================================================
+
 function PostCard({ 
   post, 
   onDelete,
+  onEdit,
   showDate = false 
 }: { 
   post: Post; 
   onDelete: (id: string) => void;
+  onEdit: (id: string, content_x: string, content_threads: string) => void;
   showDate?: boolean;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [editX, setEditX] = useState(post.content_x);
+  const [editThreads, setEditThreads] = useState(post.content_threads);
+  const [saving, setSaving] = useState(false);
+  
   const content = post.platform === 'x' ? post.content_x : post.content_threads;
+  const canEdit = post.status !== 'posted'; // Can edit pending, scheduled, and failed
+  const canDelete = true; // Can always delete from internal queue
+  
+  const handleSave = async () => {
+    setSaving(true);
+    await onEdit(post.id, editX, editThreads);
+    setEditing(false);
+    setSaving(false);
+  };
+  
+  const handleCancel = () => {
+    setEditX(post.content_x);
+    setEditThreads(post.content_threads);
+    setEditing(false);
+  };
+  
+  const xCount = editX.length;
+  const threadsCount = editThreads.length;
+  const xOver = xCount > 280;
+  const threadsOver = threadsCount > 500;
   
   return (
     <div className="bg-white rounded-lg p-4 shadow-sm">
+      {/* Header */}
       <div className="flex items-start justify-between">
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
           <span className="text-xl">{PLATFORM_ICONS[post.platform]}</span>
           <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[post.status]}`}>
-            {post.status}
+            {STATUS_LABELS[post.status] || post.status}
           </span>
           <span className="text-xs text-gray-400">
             {TYPE_LABELS[post.type] || post.type}
           </span>
-          {showDate && (
-            <span className="text-xs text-gray-400">
-              {format(new Date(post.scheduledFor), 'd.M. HH:mm')}
+          {post.edited && (
+            <span className="px-1.5 py-0.5 rounded text-xs bg-orange-100 text-orange-700">
+              edited
             </span>
           )}
-          {!showDate && (
-            <span className="text-xs text-gray-400">
-              {format(new Date(post.scheduledFor), 'HH:mm')}
+          {post.angle && (
+            <span className="text-xs text-gray-300">
+              {post.angle}
             </span>
+          )}
+          <span className="text-xs text-gray-400">
+            {showDate ? formatShortDatePrague(post.scheduledFor) : formatTimePrague(post.scheduledFor)}
+          </span>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          {canEdit && !editing && (
+            <button
+              onClick={() => setEditing(true)}
+              className="text-gray-400 hover:text-blue-500 text-sm px-1.5 py-0.5 rounded hover:bg-blue-50 transition-colors"
+              title="Editovat"
+            >
+              ✏️
+            </button>
+          )}
+          {canDelete && (
+            <button
+              onClick={() => onDelete(post.id)}
+              className="text-gray-400 hover:text-red-500 text-sm px-1.5 py-0.5 rounded hover:bg-red-50 transition-colors"
+              title="Smazat"
+            >
+              🗑️
+            </button>
           )}
         </div>
-        {post.status === 'pending' && (
-          <button
-            onClick={() => onDelete(post.id)}
-            className="text-gray-400 hover:text-red-500 text-sm"
-          >
-            ✕
-          </button>
-        )}
       </div>
-      <p className="text-gray-700 text-sm whitespace-pre-wrap">{content}</p>
-      {post.sourceUrl && (
+      
+      {/* Content -- normal view */}
+      {!editing && (
+        <p 
+          className={`text-gray-700 text-sm whitespace-pre-wrap ${canEdit ? 'cursor-pointer hover:bg-gray-50 rounded p-1 -m-1' : ''}`}
+          onClick={() => canEdit && setEditing(true)}
+        >
+          {content}
+        </p>
+      )}
+      
+      {/* Content -- edit mode */}
+      {editing && (
+        <div className="space-y-3 mt-2">
+          {/* X version */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-medium text-gray-500">𝕏 Twitter</label>
+              <span className={`text-xs ${xOver ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
+                {xCount}/280
+              </span>
+            </div>
+            <textarea
+              value={editX}
+              onChange={(e) => setEditX(e.target.value)}
+              className={`w-full p-2 border rounded-lg text-sm resize-none focus:outline-none focus:ring-2 ${
+                xOver ? 'border-red-300 focus:ring-red-200' : 'border-gray-200 focus:ring-blue-200'
+              }`}
+              rows={4}
+            />
+          </div>
+          
+          {/* Threads version */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-medium text-gray-500">🧵 Threads</label>
+              <span className={`text-xs ${threadsOver ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
+                {threadsCount}/500
+              </span>
+            </div>
+            <textarea
+              value={editThreads}
+              onChange={(e) => setEditThreads(e.target.value)}
+              className={`w-full p-2 border rounded-lg text-sm resize-none focus:outline-none focus:ring-2 ${
+                threadsOver ? 'border-red-300 focus:ring-red-200' : 'border-gray-200 focus:ring-blue-200'
+              }`}
+              rows={5}
+            />
+          </div>
+          
+          {/* Actions */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSave}
+              disabled={saving || xOver || threadsOver}
+              className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50"
+            >
+              {saving ? 'Ukládám...' : 'Uložit'}
+            </button>
+            <button
+              onClick={handleCancel}
+              className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300"
+            >
+              Zrušit
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {/* Source URL */}
+      {!editing && post.sourceUrl && (
         <div className="mt-2 flex items-center gap-1">
-          <span className="text-gray-400 text-xs">🔗</span>
           <a 
             href={post.sourceUrl} 
             target="_blank" 
             rel="noopener noreferrer"
-            className="text-blue-500 text-xs hover:underline truncate max-w-[200px]"
+            className="text-blue-500 text-xs hover:underline truncate max-w-[250px]"
           >
             {post.sourceUrl.replace('https://aibility.cz', '')}
           </a>
         </div>
       )}
+      
+      {/* Published URL */}
       {post.postUrl && (
         <a 
           href={post.postUrl} 
@@ -414,13 +578,20 @@ function PostCard({
           rel="noopener noreferrer"
           className="text-green-500 text-xs hover:underline mt-2 inline-block"
         >
-          ✅ Zobrazit publikovaný post →
+          Zobrazit publikovany post
         </a>
       )}
-      {post.error && (
-        <p className="text-red-500 text-xs mt-2">Chyba: {post.error}</p>
+      
+      {/* Error -- only show for truly failed posts, not stale status */}
+      {post.error && post.status === 'failed' && (
+        <div className="mt-2 flex items-center gap-2">
+          <p className="text-red-400 text-xs">
+            {post.error === 'Unknown error' 
+              ? 'Stav nelze ověřit (post může být naplánován v Upload Post)' 
+              : `Chyba: ${post.error}`}
+          </p>
+        </div>
       )}
     </div>
   );
 }
-// Trigger deploy Tue Feb  3 18:50:51 CET 2026

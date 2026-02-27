@@ -2,12 +2,13 @@
  * API Route: Post to social media
  * 
  * POST /api/post - Publikuj další post z fronty
+ * POST /api/post?scheduleId=xxx - Naplánuj konkrétní post z fronty do Upload Post
  * GET /api/post - Získej status Upload Post API
  */
 
 import { NextResponse } from 'next/server';
 import { publishPost, checkApiStatus } from '@/lib/poster';
-import { getNextPost, getFirstPendingPost, updatePostStatus, getQueueStats } from '@/lib/queue';
+import { getNextPost, getFirstPendingPost, updatePostStatus, getQueueStats, loadQueue } from '@/lib/queue';
 
 export async function POST(request: Request) {
   // Ověř CRON_SECRET
@@ -19,9 +20,36 @@ export async function POST(request: Request) {
   }
   
   try {
-    // Zkontroluj force parametr (pro manuální publikaci)
     const { searchParams } = new URL(request.url);
     const force = searchParams.get('force') === 'true';
+    const scheduleId = searchParams.get('scheduleId');
+    
+    // Schedule specific post by ID (naplánovat do Upload Post)
+    if (scheduleId) {
+      console.log(`📅 Scheduling specific post: ${scheduleId}`);
+      const queue = await loadQueue();
+      const targetPost = queue.posts.find(p => p.id === scheduleId);
+      
+      if (!targetPost) {
+        return NextResponse.json({ success: false, error: 'Post not found' }, { status: 404 });
+      }
+      
+      const result = await publishPost(targetPost, true); // schedule for later
+      
+      if (result.success) {
+        await updatePostStatus(targetPost.id, 'scheduled');
+        return NextResponse.json({
+          success: true,
+          message: 'Post scheduled in Upload Post',
+          post: { id: targetPost.id, platform: targetPost.platform, scheduledFor: targetPost.scheduledFor },
+        });
+      } else {
+        return NextResponse.json({
+          success: false,
+          error: result.error,
+        }, { status: 500 });
+      }
+    }
     
     console.log(`📤 Looking for post to publish... (force: ${force})`);
     

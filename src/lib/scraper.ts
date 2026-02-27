@@ -1,29 +1,55 @@
 /**
- * Scraper pro aibility.cz v2
+ * Scraper pro aibility.cz v3
  * 
- * Rozšířený - stahuje webináře, produkty, blog články, testimonials a quotes
+ * - Auto-scraping webinářů z /webinare/nejblizsi-akce
+ * - Deep blog scraping (plný text článků)
+ * - Kompletní produktový katalog s testimonials
+ * - Fallback na lokální data pokud scraping selže
  */
 
 import * as cheerio from 'cheerio';
 import { v4 as uuid } from 'uuid';
+import { createPragueDate, parsePragueDate } from './timezone';
 import type { 
   ContentSources, 
   ScrapedWebinar, 
   ScrapedProduct, 
   ScrapedQuote,
   ScrapedArticle,
-  ScrapedTestimonial 
+  Testimonial,
 } from './types';
 
 const BASE_URL = 'https://aibility.cz';
 
+// ============================================================
+// Helpers
+// ============================================================
+
 /**
- * Fetch HTML stránky
+ * Normalizuj URL -- oprav relativní cesty ze scrapeného HTML
  */
+function normalizeUrl(href: string): string {
+  // "./blog/abc" → "/blog/abc"
+  if (href.startsWith('./')) {
+    href = href.substring(1);
+  }
+  // Relativní cesty → absolutní
+  if (href.startsWith('/')) {
+    return `${BASE_URL}${href}`;
+  }
+  // Už je absolutní
+  if (href.startsWith('http')) {
+    return href;
+  }
+  return `${BASE_URL}/${href}`;
+}
+
 async function fetchPage(url: string): Promise<string> {
   const response = await fetch(url, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; AibilityScraper/1.0)',
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'cs,en;q=0.9',
     },
   });
   
@@ -35,27 +61,229 @@ async function fetchPage(url: string): Promise<string> {
 }
 
 /**
- * Webináře - Framer web je JS-rendered, tak použijeme aktuální data
- * Aktualizovat ručně nebo přes API když bude dostupné
+ * Parsuj český datum "11. února 2026" nebo "4. 2. 2026" do komponent
  */
+function parseCzechDate(text: string): { year: number; month: number; day: number } | null {
+  const monthNames: Record<string, number> = {
+    'ledna': 1, 'února': 2, 'března': 3, 'dubna': 4,
+    'května': 5, 'června': 6, 'července': 7, 'srpna': 8,
+    'září': 9, 'října': 10, 'listopadu': 11, 'prosince': 12,
+    'leden': 1, 'únor': 2, 'březen': 3, 'duben': 4,
+    'květen': 5, 'červen': 6, 'červenec': 7, 'srpen': 8,
+    'říjen': 10, 'listopad': 11, 'prosinec': 12,
+  };
+  
+  // Try "11. února 2026" format
+  const namedMonth = text.match(/(\d{1,2})\.\s*(\w+)\s*(\d{4})/);
+  if (namedMonth) {
+    const day = parseInt(namedMonth[1]);
+    const monthStr = namedMonth[2].toLowerCase();
+    const year = parseInt(namedMonth[3]);
+    const month = monthNames[monthStr];
+    if (month) return { year, month, day };
+  }
+  
+  // Try "4. 2. 2026" or "4.2.2026" format
+  const numericMonth = text.match(/(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})/);
+  if (numericMonth) {
+    return {
+      day: parseInt(numericMonth[1]),
+      month: parseInt(numericMonth[2]),
+      year: parseInt(numericMonth[3]),
+    };
+  }
+  
+  return null;
+}
+
+/**
+ * Parsuj čas "08:00" z textu
+ */
+function parseTime(text: string): string {
+  const match = text.match(/(\d{1,2}):(\d{2})/);
+  if (match) return `${match[1].padStart(2, '0')}:${match[2]}`;
+  return '10:00';
+}
+
+/**
+ * Extrahuj punchy věty z textu (pro pull quotes)
+ */
+function extractPullQuotes(text: string): string[] {
+  const sentences = text
+    .split(/[.!?]+/)
+    .map(s => s.trim())
+    .filter(s => s.length >= 30 && s.length <= 150);
+  
+  // Preferuj věty s silným jazykem
+  const strongPatterns = [
+    /za \d+ minut/, /ušetří/, /zvládnete/, /naučíte/,
+    /místo/, /proč/, /jak/, /nejlepší/, /změn/i,
+    /jednoduch/, /prax/, /konkrétní/, /výsledk/,
+  ];
+  
+  const scored = sentences.map(s => ({
+    text: s,
+    score: strongPatterns.filter(p => p.test(s)).length,
+  }));
+  
+  return scored
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5)
+    .map(s => s.text);
+}
+
+/**
+ * Extrahuj tipy z textu (věty s akčním jazykem)
+ */
+function extractTips(text: string): string[] {
+  const sentences = text
+    .split(/[.!?]+/)
+    .map(s => s.trim())
+    .filter(s => s.length >= 20 && s.length <= 200);
+  
+  const tipPatterns = [
+    /^(Zkuste|Použijte|Nastavte|Začněte|Přidejte|Otevřete|Napište|Vytvořte)/i,
+    /tip[: ]/i,
+    /doporučujeme/i,
+    /stačí/i,
+    /místo.*použijte/i,
+    /nejdřív/i,
+    /klíčov/i,
+  ];
+  
+  return sentences
+    .filter(s => tipPatterns.some(p => p.test(s)))
+    .slice(0, 5);
+}
+
+// ============================================================
+// Webináře -- auto-scraping z /webinare/nejblizsi-akce
+// ============================================================
+
 async function scrapeWebinars(): Promise<ScrapedWebinar[]> {
-  // Aktuální webináře z aibility.cz/webinare/nejblizsi-akce
-  // Poslední update: 3.2.2026
-  const upcomingWebinars: Omit<ScrapedWebinar, 'id'>[] = [
-    {
-      title: 'AI Morning Show',
-      description: 'Reálné ukázky z AI-first firmy, praktické tipy i novinky ze světa AI.',
-      date: '2026-02-04T08:00:00',
-      time: '08:00',
-      url: `${BASE_URL}/webinare/ai-morning-show-2`,
-      price: 'Zdarma',
-      type: 'live',
-    },
+  const webinars: ScrapedWebinar[] = [];
+  
+  try {
+    console.log('📅 Scraping webinars from /webinare/nejblizsi-akce...');
+    const html = await fetchPage(`${BASE_URL}/webinare/nejblizsi-akce`);
+    const $ = cheerio.load(html);
+    
+    // Framer web - hledáme karty webinářů
+    // Zkoušíme různé selektory pro Framer layout
+    const selectors = [
+      '[class*="webinar"]',
+      '[class*="event"]',
+      '[class*="card"]',
+      'article',
+      '[class*="Card"]',
+      '[class*="item"]',
+    ];
+    
+    let cards: ReturnType<typeof $> | null = null;
+    for (const selector of selectors) {
+      const found = $(selector);
+      if (found.length >= 2) {
+        cards = found;
+        console.log(`  Found ${found.length} elements with selector: ${selector}`);
+        break;
+      }
+    }
+    
+    if (cards && cards.length > 0) {
+      cards.each((_, el) => {
+        const $el = $(el);
+        const allText = $el.text();
+        
+        // Extrahuj title (H2 nebo H3)
+        const title = $el.find('h2, h3, [class*="title"], [class*="Title"]').first().text().trim();
+        if (!title || title.length < 5) return;
+        
+        // Extrahuj datum
+        const dateText = allText;
+        const dateParsed = parseCzechDate(dateText);
+        if (!dateParsed) return;
+        
+        // Extrahuj čas
+        const time = parseTime(allText);
+        const [hours, minutes] = time.split(':').map(Number);
+        
+        // ISO datum s Prague timezone
+        const isoDate = createPragueDate(dateParsed.year, dateParsed.month, dateParsed.day, hours, minutes);
+        
+        // Extrahuj popis
+        const desc = $el.find('p, [class*="desc"], [class*="Desc"]').first().text().trim();
+        
+        // Extrahuj cenu
+        const priceMatch = allText.match(/(\d[\d\s]*\s*Kč|[Zz]darma)/);
+        const price = priceMatch ? priceMatch[1].trim() : '';
+        
+        // Extrahuj link
+        const link = $el.find('a[href*="webinar"]').first().attr('href') || 
+                     $el.find('a').first().attr('href');
+        const url = link ? normalizeUrl(link) : `${BASE_URL}/webinare/nejblizsi-akce`;
+        
+        // Extrahuj duraci
+        const durationMatch = allText.match(/(\d+)\s*min/);
+        const duration = durationMatch ? `${durationMatch[1]} minut` : undefined;
+        
+        webinars.push({
+          id: uuid(),
+          title,
+          description: desc || '',
+          date: isoDate,
+          time,
+          duration,
+          url,
+          price: price || undefined,
+          type: 'live',
+        });
+      });
+    }
+    
+    console.log(`  Scraped ${webinars.length} webinars from live page`);
+    
+  } catch (error) {
+    console.error('⚠️ Live webinar scraping failed:', error);
+  }
+  
+  // Fallback na hardcoded data pokud scraping vrátí málo výsledků
+  if (webinars.length < 3) {
+    console.log('⚠️ Using fallback webinar data (scraping returned < 3 results)');
+    const fallback = getFallbackWebinars();
+    // Merge: přidej fallback webináře které ještě nemáme (podle title)
+    const existingTitles = new Set(webinars.map(w => w.title.toLowerCase()));
+    for (const w of fallback) {
+      if (!existingTitles.has(w.title.toLowerCase())) {
+        webinars.push(w);
+      }
+    }
+  }
+  
+  // Filtruj pouze budoucí webináře
+  const now = new Date();
+  const futureWebinars = webinars.filter(w => {
+    try {
+      return parsePragueDate(w.date) > now;
+    } catch {
+      return false;
+    }
+  });
+  
+  console.log(`📅 Final webinars: ${futureWebinars.length} upcoming`);
+  return futureWebinars;
+}
+
+/**
+ * Fallback webináře - aktualizovat ručně když scraping nefunguje
+ */
+function getFallbackWebinars(): ScrapedWebinar[] {
+  const fallbackData: Omit<ScrapedWebinar, 'id'>[] = [
     {
       title: 'Midjourney Masterclass: Tvořte vizuály jako profík',
       description: 'Naučte se, jak z Midjourney dostat vizuály, které drží styl, sedí na brand a dají se zopakovat.',
-      date: '2026-02-11T11:00:00',
+      date: createPragueDate(2026, 2, 11, 11, 0),
       time: '11:00',
+      duration: '180 minut',
       url: `${BASE_URL}/webinare/midjourney-masterclass-tvorte-vizualy-jako-profik`,
       price: '1 490 Kč',
       type: 'live',
@@ -63,8 +291,9 @@ async function scrapeWebinars(): Promise<ScrapedWebinar[]> {
     {
       title: 'Klíč k adopci AI: Revoluční metodika Superpowered Professional',
       description: 'AI adopci nerozjedou nástroje. Rozjedou ji lidé se správným mindsetem. Najděte ty své.',
-      date: '2026-02-19T10:00:00',
+      date: createPragueDate(2026, 2, 19, 10, 0),
       time: '10:00',
+      duration: '60 minut',
       url: `${BASE_URL}/webinare/klic-k-adopci-ai-revolucni-metodika-superpowered-professional`,
       price: 'Zdarma',
       type: 'live',
@@ -72,8 +301,9 @@ async function scrapeWebinars(): Promise<ScrapedWebinar[]> {
     {
       title: 'Cursor od základů: 90 minut, které změní způsob, jak pracujete',
       description: 'Cursor je nástroj, který dává znalostním pracovníkům superschopnosti. Naučte se ho využívat naplno.',
-      date: '2026-02-24T10:00:00',
+      date: createPragueDate(2026, 2, 24, 10, 0),
       time: '10:00',
+      duration: '90 minut',
       url: `${BASE_URL}/webinare/cursor-od-zakladu-90-minut-ktere-zmeni-zpusob-jak-pracujete`,
       price: '990 Kč',
       type: 'live',
@@ -81,8 +311,9 @@ async function scrapeWebinars(): Promise<ScrapedWebinar[]> {
     {
       title: 'Vibe coding v praxi: Od prototypu k živé appce',
       description: 'Naučíme vás workflow, se kterým z každého nápadu uděláte funkční appku s odkazem, který můžete poslat dál.',
-      date: '2026-03-10T10:00:00',
+      date: createPragueDate(2026, 3, 10, 10, 0),
       time: '10:00',
+      duration: '90 minut',
       url: `${BASE_URL}/webinare/vibe-coding-v-praxi-od-prototypu-k-zive-appce`,
       price: '1 490 Kč',
       type: 'live',
@@ -90,8 +321,9 @@ async function scrapeWebinars(): Promise<ScrapedWebinar[]> {
     {
       title: 'AI agent, který sbírá data za vás: Cursor + Apify v praxi',
       description: 'Ruční sběr dat je brzda. Ukážeme vám workflow, se kterým váš AI agent projde weby, posbírá data a připraví výstup.',
-      date: '2026-03-24T11:00:00',
+      date: createPragueDate(2026, 3, 24, 11, 0),
       time: '11:00',
+      duration: '90 minut',
       url: `${BASE_URL}/webinare/ai-agent-ktery-sbira-data-za-vas-cursor-apify-v-praxi`,
       price: '1 490 Kč',
       type: 'live',
@@ -99,274 +331,295 @@ async function scrapeWebinars(): Promise<ScrapedWebinar[]> {
     {
       title: 'Intro do Claude Code',
       description: 'Claude Code je jeden z nejsilnějších AI nástrojů současnosti. Zjistěte, jak funguje a jak ho začít používat.',
-      date: '2026-04-02T10:00:00',
+      date: createPragueDate(2026, 4, 2, 10, 0),
       time: '10:00',
+      duration: '90 minut',
       url: `${BASE_URL}/webinare/intro-do-claude-code`,
       price: '990 Kč',
       type: 'live',
     },
   ];
   
-  // Filtruj pouze budoucí webináře
-  const now = new Date();
-  const futureWebinars = upcomingWebinars.filter(w => new Date(w.date) > now);
-  
-  return futureWebinars.map(w => ({ id: uuid(), ...w }));
+  return fallbackData.map(w => ({ id: uuid(), ...w }));
 }
 
-/**
- * Scrape produkty
- */
+// ============================================================
+// Produkty -- kompletní katalog s testimonials
+// ============================================================
+
 async function scrapeProducts(): Promise<ScrapedProduct[]> {
-  const products: ScrapedProduct[] = [];
-  
-  // Hardcoded produkty pro spolehlivost (Framer je JS-rendered)
-  const predefinedProducts: Omit<ScrapedProduct, 'id'>[] = [
+  const products: ScrapedProduct[] = [
     {
-      name: 'Test AI Dovedností',
-      tagline: 'Zjistěte, jak jste na tom s AI za 5 minut',
-      description: 'Bezplatný test, který vám ukáže vaši aktuální úroveň AI dovedností. Dostanete personalizované doporučení, co se naučit dál.',
-      price: 'Zdarma',
-      url: `${BASE_URL}/aidovednosti`,
-      features: [
-        'Otestujte se za 5 minut',
-        'Personalizované výsledky',
-        'Doporučení dalších kroků',
-        'Srovnání s ostatními',
-      ],
-      cta: 'Spustit test',
-    },
-    {
+      id: uuid(),
       name: 'Aimee',
-      tagline: 'Váš AI buddy, který vás naučí používat AI',
-      description: 'Aimee je AI asistent, který vás provede světem umělé inteligence. Denní tipy, praktické úkoly a zpětná vazba přímo ve vašem pracovním prostředí.',
+      tagline: 'Jste jednu konverzaci od prvního WOW momentu',
+      description: 'AI coaching app, která vás provede světem AI. 24/7 podpora, personalizované učení, více než 30 připravených skills. Aimee se přizpůsobí vašim potřebám a provede vás od nuly k reálným výsledkům.',
       price: 'Prémiové',
       url: `${BASE_URL}/aimee`,
       features: [
-        'Denní AI tipy a úkoly',
-        'Personalizované učení',
-        'Praktické promptování',
-        'Zpětná vazba na vaše výstupy',
+        '24/7 AI partner pro učení',
+        'Personalizované na vaše potřeby',
+        'Více než 30 připravených skills',
+        'Měřitelná změna mindset',
+        'Reálné příklady z Aibility praxe',
       ],
       cta: 'Vyzkoušet Aimee',
+      testimonials: [
+        { text: 'Díky Aimee jsem za týden pochopila víc než za měsíce googlování.', role: 'Marketingová specialistka', context: 'Aimee' },
+        { text: 'Myslela jsem, že AI není pro mě. Teď ji používám každý den.', role: 'Account manager', context: 'Aimee' },
+        { text: 'Za pár dní jsem napsal 15 skriptů. Předtím jsem neuměl programovat.', role: 'Business konzultant', context: 'Aimee' },
+      ],
     },
     {
+      id: uuid(),
+      name: 'Test AI Dovedností',
+      tagline: 'Patříte mezi TOP 3%?',
+      description: '15minutový test, který zjistí váš AI profil. Konverzační formát s Aimee, ne zaškrtávačky. Dostanete personalizovaný report s vaším AI typem, skóre v 5 oblastech a 3 prioritní kroky.',
+      price: 'Prémiové',
+      url: `${BASE_URL}/aidovednosti`,
+      features: [
+        '15 minut, konverzační formát',
+        '5 AI profesních typů (Architekt, Tinkerer, Vizionář, Generalista, Průzkumník)',
+        'Personalizovaný report se skóre',
+        '3 prioritní kroky co dělat dál',
+        '30 dní přístupu k Aimee v ceně',
+      ],
+      cta: 'Spustit test',
+      testimonials: [
+        { text: 'Test mi ukázal, kde mám mezery. Teď vím, na čem pracovat.', role: 'HR manažer', context: 'AI test' },
+        { text: 'Konečně jsem pochopil, kde jsem oproti ostatním. Překvapivý výsledek.', role: 'Product manager', context: 'AI test' },
+      ],
+    },
+    {
+      id: uuid(),
       name: 'AI Edu Stream',
-      tagline: 'Všechny webináře a komunita na jednom místě',
-      description: 'Přístup ke všem live webinářům, záznamům a exkluzivní AI komunitě. Učte se od těch nejlepších AI expertů.',
+      tagline: 'Non-stop AI inspirace',
+      description: 'Přístup ke všem live webinářům, kompletní archiv záznamů, exkluzivní Circle komunita a přímý kontakt s experty. 2-3 prémiové webináře měsíčně.',
       price: 'Prémiové',
       url: `${BASE_URL}/ai-edu-stream`,
       features: [
-        'Všechny webináře zdarma',
-        'Přístup k záznamům',
-        'Exkluzivní AI komunita',
-        'Q&A s experty',
+        '2-3 prémiové webináře měsíčně',
+        'Kompletní archiv všech záznamů',
+        'Exkluzivní Circle komunita',
+        'Přímý kontakt s AI experty',
+        'Pozvánky na exkluzivní offline akce',
       ],
       cta: 'Získat přístup',
+      testimonials: [
+        { text: 'AI Edu Stream je nejlepší investice do vzdělání, kterou jsem udělala.', role: 'Freelancerka', context: 'AI Edu Stream' },
+        { text: 'Webináře jsou naprosto praktické. Hned druhý den jsem použila to, co jsem se naučila.', role: 'Projektová manažerka', context: 'AI Edu Stream' },
+        { text: 'Konečně někdo, kdo učí AI srozumitelně a bez buzzwords.', role: 'Podnikatel', context: 'AI Edu Stream' },
+      ],
     },
     {
+      id: uuid(),
+      name: 'Cursor Masterclass',
+      tagline: '90 minut, které změní způsob, jak pracujete',
+      description: 'Cursor je nástroj, který dává znalostním pracovníkům superschopnosti. Naučte se ho využívat naplno -- od základů až po pokročilé workflow.',
+      price: 'Prémiové',
+      url: `${BASE_URL}/cursor`,
+      features: [
+        'Od nuly k produktivnímu workflow',
+        'Praktické ukázky na reálných příkladech',
+        'Automatizace opakujících se úkolů',
+        'Tipy od lidí, kteří Cursor používají denně',
+      ],
+      cta: 'Zjistit více',
+      testimonials: [
+        { text: 'Za hodinu práce s Cursorem udělám to, co mi dřív trvalo celý den.', role: 'Developer', context: 'Cursor' },
+        { text: 'Nahradil jsem 4 spreadsheets jednou appkou, kterou jsem postavil sám.', role: 'Finanční analytik', context: 'Cursor' },
+      ],
+    },
+    {
+      id: uuid(),
+      name: 'Claude Code Masterclass',
+      tagline: 'Nejsilnější AI nástroj současnosti',
+      description: 'Claude Code je terminalový AI asistent, který rozumí celému vašemu projektu. Zjistěte, jak funguje a jak ho začít používat pro reálnou práci.',
+      price: 'Prémiové',
+      url: `${BASE_URL}/claudecode`,
+      features: [
+        'Pochopení celého projektu najednou',
+        'Práce přímo v terminálu',
+        'Refactoring, debugging, nové features',
+        'Integrace s existujícím workflow',
+      ],
+      cta: 'Zjistit více',
+      testimonials: [
+        { text: 'Claude Code mi za den udělal to, co bych programoval týden.', role: 'Startup founder', context: 'Claude Code' },
+      ],
+    },
+    {
+      id: uuid(),
       name: 'Aibility',
-      tagline: 'Pomáháme lidem získat superschopnosti díky AI',
-      description: 'Jsme AI-first firma, která učí lidi i firmy používat umělou inteligenci prakticky a efektivně. Žádná teorie, jen výsledky.',
+      tagline: 'Získejte superschopnosti díky AI',
+      description: 'Jsme AI-first firma, která učí lidi i firmy používat umělou inteligenci prakticky a efektivně. To, co ostatní teprve slibují, my už děláme.',
       price: '',
       url: `${BASE_URL}`,
       features: [
         'AI transformace pro firmy',
-        'Vzdělávací programy',
+        'Vzdělávací programy pro všechny úrovně',
         'Live workshopy a webináře',
-        'Praktické AI nástroje',
+        'Praktické AI nástroje a metodiky',
       ],
       cta: 'Zjistit více',
+      testimonials: [
+        { text: 'Díky Aibility jsem přestala mít z AI strach a začala ji používat denně.', role: 'Marketing manager', context: 'Aibility' },
+        { text: 'Konečně někdo, kdo učí AI srozumitelně a bez buzzwords.', role: 'Podnikatel', context: 'Aibility' },
+      ],
     },
   ];
   
-  // Vrať predefinované produkty
-  for (const product of predefinedProducts) {
-    products.push({ id: uuid(), ...product });
-  }
-  
-  // Zkus doscrapovat další z webu
-  const productPages = [
-    { url: '/cursor', name: 'Cursor Masterclass' },
-    { url: '/claudecode', name: 'Claude Code Masterclass' },
+  // Zkus doscrapovat Cursor a Claude Code pages pro čerstvější data
+  const pagesForEnrichment = [
+    { url: '/cursor', productName: 'Cursor Masterclass' },
+    { url: '/claudecode', productName: 'Claude Code Masterclass' },
   ];
   
-  for (const page of productPages) {
+  for (const page of pagesForEnrichment) {
     try {
       const html = await fetchPage(`${BASE_URL}${page.url}`);
       const $ = cheerio.load(html);
       
-      const title = $('h1').first().text().trim() || page.name;
-      const tagline = $('h2, [class*="tagline"], [class*="subtitle"]').first().text().trim();
-      const description = $('meta[name="description"]').attr('content') || 
-                         $('[class*="description"]').first().text().trim();
-      const priceText = $('[class*="price"]').first().text().trim();
+      const metaDesc = $('meta[name="description"]').attr('content');
+      const product = products.find(p => p.name === page.productName);
       
-      const features: string[] = [];
-      $('li, [class*="feature"], [class*="benefit"]').each((_, el) => {
-        const text = $(el).text().trim();
-        if (text.length > 10 && text.length < 200) {
-          features.push(text);
-        }
-      });
-      
-      const cta = $('a[class*="button"], button').first().text().trim() || 'Zjistit více';
-      
-      products.push({
-        id: uuid(),
-        name: title,
-        tagline: tagline || '',
-        description: description || '',
-        price: priceText || '',
-        url: `${BASE_URL}${page.url}`,
-        features: features.slice(0, 5),
-        cta,
-      });
-      
+      if (product && metaDesc && metaDesc.length > 20) {
+        product.description = metaDesc;
+      }
     } catch (error) {
-      console.error(`Error scraping ${page.name}:`, error);
+      console.log(`  Note: Could not enrich ${page.productName} from web`);
     }
   }
   
   return products;
 }
 
-/**
- * Scrape blog články
- */
+// ============================================================
+// Blog články -- deep scraping s plným textem
+// ============================================================
+
 async function scrapeArticles(): Promise<ScrapedArticle[]> {
   const articles: ScrapedArticle[] = [];
   
   try {
-    // Hlavní blog stránka
+    console.log('📝 Scraping blog articles...');
     const html = await fetchPage(`${BASE_URL}/blog`);
     const $ = cheerio.load(html);
     
-    // Najdi články
-    $('article, [class*="post"], [class*="blog-item"], .card').each((_, el) => {
-      const $el = $(el);
+    // Sbírej odkazy na články
+    const articleLinks: { title: string; url: string }[] = [];
+    
+    // Hledej blog karty nebo linky
+    $('a[href*="/blog/"]').each((_, el) => {
+      const href = $(el).attr('href');
+      const text = $(el).text().trim();
       
-      const title = $el.find('h2, h3, [class*="title"]').first().text().trim();
-      const excerpt = $el.find('p, [class*="excerpt"], [class*="summary"]').first().text().trim();
-      const link = $el.find('a').first().attr('href');
-      const category = $el.find('[class*="category"], [class*="tag"]').first().text().trim();
-      
-      if (title && link && title.length > 5) {
-        articles.push({
-          id: uuid(),
-          title,
-          excerpt: excerpt || '',
-          url: link.startsWith('http') ? link : `${BASE_URL}${link}`,
-          category: category || 'AI',
-          keyInsights: extractKeyInsights(title, excerpt),
-        });
+      if (href && text.length > 10 && !text.includes('Blog') && !href.endsWith('/blog') && !href.endsWith('/blog/')) {
+        const url = normalizeUrl(href);
+        // Deduplicate by URL
+        if (!articleLinks.find(a => a.url === url)) {
+          articleLinks.push({ title: text.split('\n')[0].trim(), url });
+        }
       }
     });
     
-    // Fallback - najdi všechny blog linky
-    if (articles.length === 0) {
-      $('a[href*="/blog/"]').each((_, el) => {
-        const href = $(el).attr('href');
-        const text = $(el).text().trim();
+    console.log(`  Found ${articleLinks.length} article links`);
+    
+    // Deep scrape každého článku
+    for (const link of articleLinks.slice(0, 10)) { // Max 10 článků
+      try {
+        const articleHtml = await fetchPage(link.url);
+        const $article = cheerio.load(articleHtml);
         
-        if (href && text.length > 10 && !text.includes('Blog') && !href.endsWith('/blog')) {
-          articles.push({
-            id: uuid(),
-            title: text,
-            excerpt: '',
-            url: href.startsWith('http') ? href : `${BASE_URL}${href}`,
-            keyInsights: [],
+        // Extrahuj title (preferuj H1 ze stránky)
+        const title = $article('h1').first().text().trim() || link.title;
+        
+        // Extrahuj meta description jako excerpt
+        const excerpt = $article('meta[name="description"]').attr('content') || 
+                       $article('p').first().text().trim().substring(0, 300);
+        
+        // Extrahuj plný text článku
+        let fullText = '';
+        $article('article p, [class*="content"] p, [class*="body"] p, main p').each((_, el) => {
+          const text = $article(el).text().trim();
+          if (text.length > 20) {
+            fullText += text + ' ';
+          }
+        });
+        
+        // Fallback: všechny paragrafy
+        if (fullText.length < 200) {
+          $article('p').each((_, el) => {
+            const text = $article(el).text().trim();
+            if (text.length > 30 && text.length < 1000) {
+              fullText += text + ' ';
+            }
           });
         }
-      });
+        
+        fullText = fullText.trim().substring(0, 2000);
+        
+        // Extrahuj key insights z nadpisů
+        const keyInsights: string[] = [];
+        $article('h2, h3').each((_, el) => {
+          const text = $article(el).text().trim();
+          if (text.length > 5 && text.length < 200) {
+            keyInsights.push(text);
+          }
+        });
+        
+        // Extrahuj pull quotes a tipy
+        const pullQuotes = extractPullQuotes(fullText);
+        const tips = extractTips(fullText);
+        
+        // Extrahuj publish date
+        let publishedAt: string | undefined;
+        const dateEl = $article('time, [class*="date"], [class*="Date"]').first();
+        const dateText = dateEl.attr('datetime') || dateEl.text().trim();
+        if (dateText) {
+          const parsed = parseCzechDate(dateText);
+          if (parsed) {
+            publishedAt = createPragueDate(parsed.year, parsed.month, parsed.day, 12, 0);
+          }
+        }
+        
+        if (title && (fullText.length > 100 || excerpt)) {
+          articles.push({
+            id: uuid(),
+            title,
+            excerpt: excerpt || '',
+            url: link.url,
+            category: 'AI',
+            publishedAt,
+            fullText,
+            keyInsights,
+            pullQuotes,
+            tips,
+          });
+          console.log(`  ✅ ${title} (${fullText.length} chars, ${pullQuotes.length} quotes, ${tips.length} tips)`);
+        }
+        
+        // Pauza mezi requesty
+        await new Promise(r => setTimeout(r, 300));
+        
+      } catch (error) {
+        console.error(`  ❌ Failed to scrape: ${link.url}`, error);
+      }
     }
     
   } catch (error) {
-    console.error('Error scraping articles:', error);
+    console.error('Error scraping blog:', error);
   }
   
+  console.log(`📝 Final articles: ${articles.length}`);
   return articles;
 }
 
-/**
- * Extrahuj klíčové myšlenky z titulku a excertu
- */
-function extractKeyInsights(title: string, excerpt: string): string[] {
-  const insights: string[] = [];
-  
-  // Přidej titulek jako insight
-  if (title) insights.push(title);
-  
-  // Rozděl excerpt na věty a použij jako insights
-  if (excerpt) {
-    const sentences = excerpt.split(/[.!?]+/).filter(s => s.trim().length > 20);
-    insights.push(...sentences.slice(0, 3).map(s => s.trim()));
-  }
-  
-  return insights;
-}
+// ============================================================
+// Quotes a insights (pro brand posty)
+// ============================================================
 
-/**
- * Testimonials - mix scrapovaných a předdefinovaných
- */
-async function scrapeTestimonials(): Promise<ScrapedTestimonial[]> {
-  const testimonials: ScrapedTestimonial[] = [];
-  
-  // Předdefinované testimonials (anonymizované)
-  const predefined: Omit<ScrapedTestimonial, 'id'>[] = [
-    { text: 'Díky Aimee jsem za týden pochopila víc než za měsíce googlování.', role: 'Marketingová specialistka', context: 'Aimee' },
-    { text: 'AI Maturity Test mi ukázal, kde mám mezery. Teď vím, na čem pracovat.', role: 'HR manažer', context: 'AI Maturity Test' },
-    { text: 'Webináře jsou naprosto praktické. Hned druhý den jsem použila to, co jsem se naučila.', role: 'Projektová manažerka', context: 'webinar' },
-    { text: 'Konečně někdo, kdo učí AI srozumitelně a bez buzzwords.', role: 'Podnikatel', context: 'Aibility' },
-    { text: 'Za hodinu práce s Cursorem udělám to, co mi dřív trvalo celý den.', role: 'Developer', context: 'Cursor' },
-    { text: 'AI Edu Stream je nejlepší investice do vzdělání, kterou jsem udělala.', role: 'Freelancerka', context: 'AI Edu Stream' },
-    { text: 'Myslela jsem, že AI není pro mě. Teď ji používám každý den.', role: 'Account manager', context: 'Aimee' },
-    { text: 'Prompt engineering mi přišel jako magie. Teď vím, že je to skill, který se dá naučit.', role: 'Content creator', context: 'webinar' },
-  ];
-  
-  for (const t of predefined) {
-    testimonials.push({ id: uuid(), ...t });
-  }
-  
-  // Zkus scrapovat testimonials z webu
-  try {
-    const pages = ['/', '/aimee', '/ai-edu-stream'];
-    
-    for (const page of pages) {
-      const html = await fetchPage(`${BASE_URL}${page}`);
-      const $ = cheerio.load(html);
-      
-      $('[class*="testimonial"], [class*="review"], blockquote').each((_, el) => {
-        const text = $(el).find('p, [class*="text"]').first().text().trim();
-        const role = $(el).find('[class*="author"], [class*="name"], cite').first().text().trim();
-        
-        if (text.length > 20 && text.length < 300) {
-          // Anonymizuj - odstraň jména
-          const anonymizedRole = role.replace(/^[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][a-záčďéěíňóřšťúůýž]+ [A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][a-záčďéěíňóřšťúůýž]+,?\s*/i, '');
-          
-          testimonials.push({
-            id: uuid(),
-            text,
-            role: anonymizedRole || undefined,
-            context: page === '/' ? 'Aibility' : page.replace('/', ''),
-          });
-        }
-      });
-    }
-  } catch (error) {
-    console.error('Error scraping testimonials:', error);
-  }
-  
-  return testimonials;
-}
-
-/**
- * Quotes a insights
- */
 async function scrapeQuotes(): Promise<ScrapedQuote[]> {
-  const quotes: ScrapedQuote[] = [];
-  
-  // Rozšířené předdefinované quotes
   const predefinedQuotes = [
     // Mission & Brand
     { text: 'Aibility dělá AI lidskou. Pomáhá lidem získat superschopnosti díky AI.', source: 'brand', category: 'mission' },
@@ -378,85 +631,44 @@ async function scrapeQuotes(): Promise<ScrapedQuote[]> {
     // Benefits
     { text: 'Za 3 hodiny zvládnete to, co by vám dřív trvalo celý týden.', source: 'brand', category: 'benefit' },
     { text: 'Odnesete si funkční prompty a hotovou šablonu. Zítra ušetříte první hodinu.', source: 'brand', category: 'benefit' },
-    { text: 'Učte se od nejlepších AI expertů. Získejte přístup ke všem webinářům.', source: 'brand', category: 'benefit' },
     
     // AI Insights
     { text: 'AI není hrozba. Je to nástroj, který zesiluje vaše schopnosti.', source: 'insight', category: 'ai' },
     { text: 'Budoucnost patří těm, kteří umí s AI spolupracovat, ne těm, kteří se jí bojí.', source: 'insight', category: 'ai' },
-    { text: 'Prompt engineering je nová gramotnost 21. století.', source: 'insight', category: 'ai' },
-    { text: 'AI nenahradí lidi, ale lidé s AI nahradí lidi bez AI.', source: 'insight', category: 'ai' },
     { text: 'Nejlepší prompt je ten, který dává AI kontext a jasný cíl.', source: 'insight', category: 'ai' },
+    { text: 'AI nenahradí lidi, ale lidé s AI nahradí lidi bez AI.', source: 'insight', category: 'ai' },
     
     // Productivity
     { text: 'Automatizujte nudné úkoly. Zaměřte se na to, co vás baví.', source: 'insight', category: 'productivity' },
-    { text: 'Každý meeting, který se dá nahradit AI, by měl být nahrazen AI.', source: 'insight', category: 'productivity' },
     { text: 'AI vám neušetří čas, pokud nevíte, co s ním chcete dělat.', source: 'insight', category: 'productivity' },
   ];
   
-  for (const q of predefinedQuotes) {
-    quotes.push({ id: uuid(), ...q });
-  }
-  
-  return quotes;
+  return predefinedQuotes.map(q => ({ id: uuid(), ...q }));
 }
 
-/**
- * Parsování datumu
- */
-function parseDate(text: string): string {
-  const dateMatch = text.match(/(\d{1,2})\.?\s*(\d{1,2})\.?\s*(\d{4})?/);
-  
-  if (dateMatch) {
-    const day = parseInt(dateMatch[1]);
-    const month = parseInt(dateMatch[2]) - 1;
-    const year = dateMatch[3] ? parseInt(dateMatch[3]) : new Date().getFullYear();
-    
-    const date = new Date(year, month, day);
-    return date.toISOString();
-  }
-  
-  const future = new Date();
-  future.setDate(future.getDate() + 7);
-  return future.toISOString();
-}
+// ============================================================
+// Hlavní scrape funkce
+// ============================================================
 
-/**
- * Parsování času
- */
-function parseTime(text: string): string {
-  const timeMatch = text.match(/(\d{1,2}):(\d{2})/);
-  
-  if (timeMatch) {
-    return `${timeMatch[1].padStart(2, '0')}:${timeMatch[2]}`;
-  }
-  
-  return '17:00';
-}
-
-/**
- * Hlavní scrape funkce
- */
 export async function scrapeAll(): Promise<ContentSources> {
-  console.log('🔍 Starting scrape of aibility.cz...');
+  console.log('🔍 Starting full scrape of aibility.cz...');
   
-  const [webinars, products, articles, testimonials, quotes] = await Promise.all([
+  const [webinars, products, articles, quotes] = await Promise.all([
     scrapeWebinars(),
     scrapeProducts(),
     scrapeArticles(),
-    scrapeTestimonials(),
     scrapeQuotes(),
   ]);
   
-  console.log(`✅ Scraped: ${webinars.length} webinars, ${products.length} products, ${articles.length} articles, ${testimonials.length} testimonials, ${quotes.length} quotes`);
+  console.log(`✅ Scrape complete: ${webinars.length} webinars, ${products.length} products, ${articles.length} articles, ${quotes.length} quotes`);
   
   return {
     webinars,
     products,
     articles,
-    testimonials,
     quotes,
     scrapedAt: new Date().toISOString(),
   };
 }
 
-export { scrapeWebinars, scrapeProducts, scrapeArticles, scrapeTestimonials, scrapeQuotes };
+export { scrapeWebinars, scrapeProducts, scrapeArticles, scrapeQuotes };
